@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup - Expansión de Tienda</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fb; }
+  select, input, textarea, button { font-family: inherit; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ── Icons ──
+const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+const EditIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>;
+const BankIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>;
+const PlusIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const CloseIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+const CheckCircleIcon = ({ color = "#16a34a" }) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const FileCheckIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>;
+const PersonIcon = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+const ImagePlaceholder = () => <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>;
+const MapPlaceholder = () => (
+  <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 40%, #dbeafe 60%, #c7d2fe 100%)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, opacity: 0.15 }}>
+      {[...Array(8)].map((_, i) => <div key={i} style={{ position: "absolute", top: `${i * 14}%`, left: 0, right: 0, height: 1, background: "#6366f1" }} />)}
+      {[...Array(6)].map((_, i) => <div key={i} style={{ position: "absolute", left: `${i * 18}%`, top: 0, bottom: 0, width: 1, background: "#6366f1" }} />)}
+    </div>
+    <div style={{ width: 18, height: 18, background: "#ef4444", borderRadius: "50%", border: "3px solid white", boxShadow: "0 2px 6px rgba(0,0,0,.3)", zIndex: 1 }} />
+  </div>
+);
+
+// ── Stepper ──
+const STEPS = ["Selección de Tienda", "Formulario de tienda básica", "Instrucciones de Entrega", "Horarios de Tienda", "Confirmación de Datos"];
+
+function Stepper({ current, completed }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "24px 16px 16px", position: "relative" }}>
+      {STEPS.map((label, i) => {
+        const done = completed.includes(i);
+        const active = i === current;
+        const isLast = i === STEPS.length - 1;
+        return (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative" }}>
+            {!isLast && (
+              <div style={{ position: "absolute", top: 18, left: "calc(50% + 20px)", right: "calc(-50% + 20px)", height: 3, background: done ? "#2563eb" : "#e5e7eb", zIndex: 0, borderRadius: 2 }} />
+            )}
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              background: done ? "#2563eb" : active ? "#2563eb" : "#f3f4f6",
+              color: done || active ? "white" : "#9ca3af",
+              fontWeight: 700, fontSize: 14, zIndex: 1, border: active ? "3px solid #2563eb" : done ? "3px solid #2563eb" : "2px solid #e5e7eb",
+              transition: "all .3s"
+            }}>
+              {done && !active ? i + 1 : i + 1}
+            </div>
+            <span style={{ fontSize: 11, marginTop: 6, color: active ? "#2563eb" : done ? "#2563eb" : "#9ca3af", fontWeight: active ? 700 : 500, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Field ──
+function Field({ label, value, onChange, type = "text", half, dropdown, disabled, placeholder, green }) {
+  return (
+    <div style={{ flex: half ? "0 0 48%" : "1 1 100%", minWidth: half ? 160 : 0 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: green ? "#16a34a" : "#6b7280", textTransform: "uppercase", letterSpacing: ".5px" }}>{label}</label>
+      {dropdown ? (
+        <div style={{ position: "relative" }}>
+          <select value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled}
+            style={{ width: "100%", padding: "10px 12px", border: `1px solid ${green ? "#bbf7d0" : "#e5e7eb"}`, borderRadius: 8, fontSize: 14, fontWeight: 500, appearance: "none", background: disabled ? "#f9fafb" : "white", color: "#111", cursor: disabled ? "default" : "pointer" }}>
+            {dropdown.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#9ca3af", fontSize: 12 }}>▼</span>
+        </div>
+      ) : type === "textarea" ? (
+        <textarea value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} rows={4}
+          style={{ width: "100%", padding: "10px 12px", border: `1px solid ${green ? "#bbf7d0" : "#e5e7eb"}`, borderRadius: 8, fontSize: 14, fontWeight: 500, background: disabled ? "#f9fafb" : "white", color: "#111", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit" }} />
+      ) : (
+        <input type={type} value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder}
+          style={{ width: "100%", padding: "10px 12px", border: `1px solid ${green ? "#bbf7d0" : "#e5e7eb"}`, borderRadius: 8, fontSize: 14, fontWeight: 500, background: disabled ? "#f9fafb" : "white", color: "#111", boxSizing: "border-box" }} />
+      )}
+    </div>
+  );
+}
+
+// ── Bank Card ──
+function BankCard({ account, onEdit, onDelete }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", border: "1px solid #e5e7eb", borderRadius: 12, background: "white", marginBottom: 12 }}>
+      <BankIcon />
+      <div style={{ marginLeft: 12, flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{account.banco} - {account.tipoCuenta}</div>
+        <div style={{ fontSize: 12, color: "#6b7280" }}>{account.titular} · <code style={{ fontSize: 11, background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>{account.cbu}</code></div>
+        <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 600, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}><CheckCircleIcon color="#16a34a" /> CERTIFICADO VALIDADO</div>
+      </div>
+      <button onClick={onEdit} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}><EditIcon /></button>
+      <button onClick={onDelete} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}><TrashIcon /></button>
+    </div>
+  );
+}
+
+// ── Bank Form ──
+function BankForm({ account, onSave, onCancel }) {
+  const [form, setForm] = useState(account || {
+    titular: "", tipoDoc: "CUIT", numDoc: "", banco: "Mercado Pago", tipoCuenta: "Caja de Ahorros", cbu: "", alias: "", certUploaded: false
+  });
+  const u = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white", position: "relative" }}>
+      <button onClick={onCancel} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+      <h3 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 20px", color: "#111" }}>{account ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h3>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 55%", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <Field label="Titular de la cuenta *" value={form.titular} onChange={v => u("titular", v)} />
+            <Field label="Tipo de doc." value={form.tipoDoc} onChange={v => u("tipoDoc", v)} dropdown={["CUIT", "DNI", "CUIL", "NIT", "CC"]} half />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <Field label="Número de doc. titular *" value={form.numDoc} onChange={v => u("numDoc", v)} half />
+            <Field label="Banco o entidad" value={form.banco} onChange={v => u("banco", v)} dropdown={["Mercado Pago", "Banco Nación", "Banco Galicia", "Brubank", "Ualá", "Bancolombia", "Davivienda", "Nequi"]} half />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <Field label="Tipo de cuenta" value={form.tipoCuenta} onChange={v => u("tipoCuenta", v)} dropdown={["Caja de Ahorros", "Cuenta Corriente", "Ahorros"]} half />
+            <Field label="Número de cuenta (CBU/CVU) *" value={form.cbu} onChange={v => u("cbu", v)} half />
+          </div>
+          <Field label="Alias (opcional)" value={form.alias} onChange={v => u("alias", v)} />
+        </div>
+        <div style={{ flex: "1 1 35%", minWidth: 220 }}>
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Certificado Bancario <span style={{ color: "#ef4444" }}>*</span></div>
+            <p style={{ fontSize: 11, color: "#6b7280", margin: "6px 0 12px", lineHeight: 1.4 }}>Es obligatorio subir un documento o imagen válido expedido por tu banco (máx. 30 días de vigencia).</p>
+            {form.certUploaded ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8 }}>
+                <FileCheckIcon />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>Certificado_Banco.pdf</div>
+                  <div style={{ fontSize: 11, color: "#16a34a" }}>Cargado exitosamente</div>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => u("certUploaded", true)} style={{ width: "100%", padding: "20px", border: "2px dashed #d1d5db", borderRadius: 8, background: "#fafafa", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#6b7280", fontSize: 12 }}>
+                <UploadIcon /> Subir certificado
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+        <button onClick={onCancel} style={{ padding: "10px 24px", background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#374151" }}>Cancelar</button>
+        <button onClick={() => onSave({ ...form, certUploaded: true })} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <CheckCircleIcon color="white" /> Guardar cuenta
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Hours Table ──
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const HOURS = [...Array(24)].map((_, i) => `${String(i).padStart(2, "0")}:00`);
+
+function HoursTable({ hours, onChange }) {
+  const totalHours = DAYS.reduce((sum, d) => {
+    const o = parseInt(hours[d]?.open || "0");
+    const c = parseInt(hours[d]?.close || "0");
+    return sum + (c > o ? c - o : 0);
+  }, 0);
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>Min. horas:</span>
+          <span style={{ padding: "4px 10px", background: "#f3f4f6", borderRadius: 6, fontSize: 13, fontWeight: 600 }}>40</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#374151" }}>Horas registradas: <strong>{totalHours}</strong></div>
+      </div>
+      <div style={{ borderTop: "1px solid #e5e7eb" }}>
+        <div style={{ display: "flex", padding: "12px 0", fontWeight: 700, fontSize: 13, color: "#374151" }}>
+          <div style={{ width: 100 }}>Día</div>
+          <div style={{ width: 120 }}>Abre</div>
+          <div style={{ width: 120 }}>Cierra</div>
+        </div>
+        {DAYS.map(day => (
+          <div key={day} style={{ display: "flex", alignItems: "center", padding: "10px 0", borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ width: 100, fontSize: 14, color: "#374151" }}>{day}</div>
+            <div style={{ width: 120 }}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <label style={{ fontSize: 9, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Abre</label>
+                <select value={hours[day]?.open || "15:00"} onChange={e => onChange(day, "open", e.target.value)}
+                  style={{ display: "block", padding: "6px 28px 6px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, appearance: "none", background: "#f9fafb", cursor: "pointer" }}>
+                  {HOURS.map(h => <option key={h}>{h}</option>)}
+                </select>
+                <span style={{ position: "absolute", right: 8, bottom: 8, fontSize: 10, color: "#9ca3af", pointerEvents: "none" }}>▼</span>
+              </div>
+            </div>
+            <div style={{ width: 120 }}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <label style={{ fontSize: 9, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase" }}>Cierra</label>
+                <select value={hours[day]?.close || "22:00"} onChange={e => onChange(day, "close", e.target.value)}
+                  style={{ display: "block", padding: "6px 28px 6px 10px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, appearance: "none", background: "#f9fafb", cursor: "pointer" }}>
+                  {HOURS.map(h => <option key={h}>{h}</option>)}
+                </select>
+                <span style={{ position: "absolute", right: 8, bottom: 8, fontSize: 10, color: "#9ca3af", pointerEvents: "none" }}>▼</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// ── MAIN APP ──
+// ══════════════════════════════════
+function ExpansionTienda() {
+  const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState([]);
+  const [wizardDone, setWizardDone] = useState(false);
+
+  // Razón social (header info)
+  const razonSocial = { nombre: "Laura Camila Farfan Gallego", nit: "NIT 1117534086", razon: "FARFAN GALLEGO LAURA CAMILA", email: "laurelpizzeriaibague11@hotmail.com" };
+
+  // Step 1 - Selección de Tienda
+  const [seleccion, setSeleccion] = useState({ razonSocial: "FARFAN GALLEGO LAURA CAMILA", marca: "Pizzería Laurel", cuentaBancaria: "86995423873 · Cta Ahorros", tiendaBase: "Laurel Pizzería" });
+
+  // Step 2 - Formulario tienda básica
+  const [tienda, setTienda] = useState({
+    nombreContacto: "LAURA CAMILA", apellidoContacto: "FARFAN GALLEGO", direccion: "Carrera 4 32-93, Ibagué, Colombia",
+    tipoComida: "Pizza", prefijo: "+57", telefono: "3228437154", email: "laurelpizzeriaibague11@hotmail.com"
+  });
+
+  // Step 3 - Instrucciones de Entrega
+  const [entrega, setEntrega] = useState({ puntoEntrega: "carrera 4 estadio 33-45", instrucciones: "", fotoUploaded: false });
+
+  // Step 4 - Horarios
+  const defaultHours = {};
+  DAYS.forEach(d => { defaultHours[d] = { open: "15:00", close: "22:00" }; });
+  const [hours, setHours] = useState(defaultHours);
+  const handleHourChange = (day, field, val) => setHours(p => ({ ...p, [day]: { ...p[day], [field]: val } }));
+
+  // Post-wizard panel
+  const [stores, setStores] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
+  const [storeData, setStoreData] = useState({});
+  const [showNewStoreWizard, setShowNewStoreWizard] = useState(false);
+  const [newStoreStep, setNewStoreStep] = useState(0);
+  const [newStore, setNewStore] = useState({ nombreContacto: "", apellidoContacto: "", direccion: "", tipoComida: "Pizza", prefijo: "+57", telefono: "", email: "", puntoEntrega: "", instrucciones: "", fotoUploaded: false });
+  const [newStoreHours, setNewStoreHours] = useState(() => { const h = {}; DAYS.forEach(d => { h[d] = { open: "15:00", close: "22:00" }; }); return h; });
+
+  // Initialize first store after wizard
+  useEffect(() => {
+    if (wizardDone && stores.length === 0) {
+      const storeName = tienda.direccion.split(",")[0] || "Sucursal Nueva";
+      const id = 1;
+      setStores([{ id, nombre: storeName }]);
+      setStoreData({ [id]: { bankAccounts: [], showBankForm: false, editingBank: null, hoursConfig: { ...hours }, entregaConfig: { ...entrega }, completed: { bank: false, horarios: false, entrega: false } } });
+      setActiveTab(id);
+    }
+  }, [wizardDone]);
+
+  const goNext = () => {
+    if (step === 4) {
+      setCompleted(prev => [...new Set([...prev, step])]);
+      setWizardDone(true);
+      return;
+    }
+    setCompleted(prev => [...new Set([...prev, step])]);
+    setStep(s => Math.min(s + 1, 4));
+  };
+  const goBack = () => setStep(s => Math.max(s - 1, 0));
+
+  const h2Style = { fontSize: 22, fontWeight: 700, color: "#111", margin: "0 0 6px" };
+  const descStyle = { fontSize: 14, color: "#6b7280", margin: "0 0 4px", lineHeight: 1.5 };
+
+  // ═══════ RENDER STEPS ═══════
+  const renderStep = () => {
+    switch (step) {
+      // Step 1 - Selección de Tienda
+      case 0: {
+        const u = (k, v) => setSeleccion(p => ({ ...p, [k]: v }));
+        return (
+          <div>
+            <h2 style={h2Style}>Selección de Tienda</h2>
+            <p style={descStyle}>Configura la información inicial seleccionando la cuenta bancaria asociada y la tienda base existente para copiar su menú y horario a la nueva sucursal.</p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 20 }}>
+              <Field label="Razón Social" value={seleccion.razonSocial} onChange={v => u("razonSocial", v)} dropdown={["FARFAN GALLEGO LAURA CAMILA"]} green half />
+              <Field label="Marca" value={seleccion.marca} onChange={v => u("marca", v)} dropdown={["Pizzería Laurel"]} green half />
+            </div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14 }}>
+              <Field label="Cuenta Bancaria" value={seleccion.cuentaBancaria} onChange={v => u("cuentaBancaria", v)} dropdown={["86995423873 · Cta Ahorros"]} green half />
+              <Field label="Tienda Base" value={seleccion.tiendaBase} onChange={v => u("tiendaBase", v)} dropdown={["Laurel Pizzería"]} green half />
+            </div>
+          </div>
+        );
+      }
+
+      // Step 2 - Formulario tienda básica
+      case 1: {
+        const u = (k, v) => setTienda(p => ({ ...p, [k]: v }));
+        return (
+          <div>
+            <h2 style={h2Style}>Formulario de tienda básica</h2>
+            <p style={descStyle}>Por favor, ingresa los siguientes datos para continuar con el proceso.</p>
+            <div style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 50%", minWidth: 300, display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <Field label="Nombre de contacto principal" value={tienda.nombreContacto} onChange={v => u("nombreContacto", v)} half />
+                  <Field label="Apellido de contacto principal" value={tienda.apellidoContacto} onChange={v => u("apellidoContacto", v)} half />
+                </div>
+                <Field label="Tipo de comida" value={tienda.tipoComida} onChange={v => u("tipoComida", v)} dropdown={["Pizza", "Argentina", "Colombiana", "Mexicana", "Italiana", "Peruana", "Japonesa"]} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <Field label="Prefijo" value={tienda.prefijo} onChange={v => u("prefijo", v)} dropdown={["+57", "+54", "+52", "+56", "+51"]} half />
+                  <Field label="Teléfono" value={tienda.telefono} onChange={v => u("telefono", v)} half />
+                </div>
+                <Field label="Correo electrónico" value={tienda.email} onChange={v => u("email", v)} />
+              </div>
+              <div style={{ flex: "1 1 40%", minWidth: 280 }}>
+                <Field label="Dirección" value={tienda.direccion} onChange={v => u("direccion", v)} green />
+                <div style={{ marginTop: 12, height: 280, borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+                  <MapPlaceholder />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Step 3 - Instrucciones de Entrega
+      case 2: {
+        const u = (k, v) => setEntrega(p => ({ ...p, [k]: v }));
+        return (
+          <div>
+            <h2 style={h2Style}>Instrucciones de Entrega</h2>
+            <p style={descStyle}>Configura las instrucciones especiales para la entrega en esta sucursal</p>
+            <div style={{ display: "flex", gap: 24, marginTop: 20, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 45%", minWidth: 280, display: "flex", flexDirection: "column", gap: 14 }}>
+                <Field label="Punto de entrega del pedido (Ej. Parte trasera de la tienda)" value={entrega.puntoEntrega} onChange={v => u("puntoEntrega", v)} green />
+                <Field label="Instrucciones para recoger pedidos (Descripción/Lugar/Oficina)" value={entrega.instrucciones} onChange={v => u("instrucciones", v)} type="textarea" placeholder="Instrucciones adicionales..." />
+              </div>
+              <div style={{ flex: "1 1 40%", minWidth: 240 }}>
+                <div style={{ border: "2px dashed #d1d5db", borderRadius: 12, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, background: entrega.fotoUploaded ? "#f0fdf4" : "#fafafa", cursor: "pointer" }}
+                  onClick={() => u("fotoUploaded", true)}>
+                  {entrega.fotoUploaded ? (
+                    <>
+                      <FileCheckIcon />
+                      <div style={{ fontWeight: 600, fontSize: 14, marginTop: 8, color: "#16a34a" }}>Foto cargada</div>
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlaceholder />
+                      <div style={{ fontWeight: 600, fontSize: 14, marginTop: 12, color: "#374151" }}>Foto de la tienda</div>
+                      <button style={{ marginTop: 10, padding: "6px 16px", border: "1px solid #d1d5db", borderRadius: 6, background: "white", fontSize: 12, cursor: "pointer", color: "#6b7280" }}>Subir imagen</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Step 4 - Horarios
+      case 3:
+        return (
+          <div>
+            <h2 style={h2Style}>Horarios de Tienda</h2>
+            <p style={descStyle}>Establece los horarios de operación para la nueva sucursal</p>
+            <div style={{ marginTop: 16 }}>
+              <HoursTable hours={hours} onChange={handleHourChange} />
+            </div>
+          </div>
+        );
+
+      // Step 5 - Confirmación
+      case 4:
+        return (
+          <div>
+            <h2 style={h2Style}>Confirmación de Datos</h2>
+            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 20px", marginTop: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 18 }}>ℹ</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>¡Revisión del proceso!</div>
+                <div style={{ fontSize: 13, color: "#374151", marginTop: 2 }}>Estás visualizando la información de este proceso comercial en modo solo lectura. No puedes realizar cambios, pero puedes revisar todos los datos y documentos asociados.</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default: return null;
+    }
+  };
+
+  // ═══════ PANEL POST-WIZARD ═══════
+  const renderPanel = () => {
+    const updateStoreData = (storeId, field, value) => {
+      setStoreData(p => ({
+        ...p,
+        [storeId]: { ...p[storeId], [field]: value }
+      }));
+    };
+
+    const updateStoreCompleted = (storeId, field, value) => {
+      setStoreData(p => ({
+        ...p,
+        [storeId]: { ...p[storeId], completed: { ...p[storeId].completed, [field]: value } }
+      }));
+    };
+
+    return (
+      <div>
+        {/* Tabs */}
+        <div style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", marginBottom: 24, gap: 0, flexWrap: "wrap" }}>
+          {stores.map(s => {
+            const sd = storeData[s.id];
+            const done = sd && sd.completed.bank && sd.completed.horarios && sd.completed.entrega;
+            return (
+              <button key={s.id} onClick={() => { setActiveTab(s.id); setShowNewStoreWizard(false); }}
+                style={{
+                  padding: "10px 20px", fontSize: 14, fontWeight: activeTab === s.id && !showNewStoreWizard ? 700 : 400, cursor: "pointer",
+                  background: "none", border: "none", borderBottom: activeTab === s.id && !showNewStoreWizard ? "2px solid #2563eb" : "none",
+                  color: activeTab === s.id && !showNewStoreWizard ? "#2563eb" : "#6b7280", display: "flex", alignItems: "center", gap: 6
+                }}>
+                {s.nombre} {done && <CheckCircleIcon color="#16a34a" />}
+              </button>
+            );
+          })}
+          <button onClick={() => { setShowNewStoreWizard(true); setNewStoreStep(0); setNewStore({ nombreContacto: "", apellidoContacto: "", direccion: "", tipoComida: "Pizza", prefijo: "+57", telefono: "", email: "", puntoEntrega: "", instrucciones: "", fotoUploaded: false }); const h = {}; DAYS.forEach(d => { h[d] = { open: "15:00", close: "22:00" }; }); setNewStoreHours(h); }}
+            style={{ padding: "8px 14px", fontSize: 13, cursor: "pointer", background: "none", border: "1px dashed #d1d5db", borderRadius: 20, color: "#6b7280", display: "flex", alignItems: "center", gap: 4, marginLeft: 8, transition: "all .2s" }}
+            title="Agregar nueva tienda">
+            <PlusIcon /> Nueva sucursal
+          </button>
+        </div>
+
+        {/* New Store Wizard (mini) */}
+        {showNewStoreWizard && (
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Nueva Sucursal — Paso {newStoreStep + 1} de 3</h3>
+              <button onClick={() => setShowNewStoreWizard(false)} style={{ background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+            </div>
+            {/* mini step indicator */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+              {["Datos de tienda", "Instrucciones", "Horarios"].map((l, i) => (
+                <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= newStoreStep ? "#2563eb" : "#e5e7eb" }} />
+              ))}
+            </div>
+
+            {newStoreStep === 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <Field label="Nombre de contacto" value={newStore.nombreContacto} onChange={v => setNewStore(p => ({ ...p, nombreContacto: v }))} half />
+                  <Field label="Apellido de contacto" value={newStore.apellidoContacto} onChange={v => setNewStore(p => ({ ...p, apellidoContacto: v }))} half />
+                </div>
+                <Field label="Dirección" value={newStore.direccion} onChange={v => setNewStore(p => ({ ...p, direccion: v }))} placeholder="Ej: Calle 123, Ciudad" />
+                <Field label="Tipo de comida" value={newStore.tipoComida} onChange={v => setNewStore(p => ({ ...p, tipoComida: v }))} dropdown={["Pizza", "Argentina", "Colombiana", "Mexicana", "Italiana"]} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <Field label="Prefijo" value={newStore.prefijo} onChange={v => setNewStore(p => ({ ...p, prefijo: v }))} dropdown={["+57", "+54", "+52"]} half />
+                  <Field label="Teléfono" value={newStore.telefono} onChange={v => setNewStore(p => ({ ...p, telefono: v }))} half />
+                </div>
+                <Field label="Correo electrónico" value={newStore.email} onChange={v => setNewStore(p => ({ ...p, email: v }))} />
+              </div>
+            )}
+            {newStoreStep === 1 && (
+              <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 50%", minWidth: 260, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <Field label="Punto de entrega" value={newStore.puntoEntrega} onChange={v => setNewStore(p => ({ ...p, puntoEntrega: v }))} />
+                  <Field label="Instrucciones" value={newStore.instrucciones} onChange={v => setNewStore(p => ({ ...p, instrucciones: v }))} type="textarea" placeholder="Instrucciones para recoger pedidos..." />
+                </div>
+                <div style={{ flex: "1 1 35%", minWidth: 200 }}>
+                  <div style={{ border: "2px dashed #d1d5db", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", alignItems: "center", minHeight: 140, background: newStore.fotoUploaded ? "#f0fdf4" : "#fafafa", cursor: "pointer" }}
+                    onClick={() => setNewStore(p => ({ ...p, fotoUploaded: true }))}>
+                    {newStore.fotoUploaded ? <><FileCheckIcon /><span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginTop: 6 }}>Foto cargada</span></> : <><ImagePlaceholder /><span style={{ fontSize: 13, marginTop: 8 }}>Foto de la tienda</span></>}
+                  </div>
+                </div>
+              </div>
+            )}
+            {newStoreStep === 2 && (
+              <HoursTable hours={newStoreHours} onChange={(day, field, val) => setNewStoreHours(p => ({ ...p, [day]: { ...p[day], [field]: val } }))} />
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+              <button onClick={() => newStoreStep === 0 ? setShowNewStoreWizard(false) : setNewStoreStep(s => s - 1)}
+                style={{ padding: "10px 20px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, cursor: "pointer", color: "#2563eb", fontWeight: 600 }}>
+                {newStoreStep === 0 ? "Cancelar" : "Volver"}
+              </button>
+              <button onClick={() => {
+                if (newStoreStep < 2) { setNewStoreStep(s => s + 1); }
+                else {
+                  const newId = Math.max(...stores.map(s => s.id), 0) + 1;
+                  const name = newStore.direccion.split(",")[0] || `Sucursal ${newId}`;
+                  setStores(p => [...p, { id: newId, nombre: name }]);
+                  setStoreData(p => ({ ...p, [newId]: { bankAccounts: [], showBankForm: false, editingBank: null, hoursConfig: { ...newStoreHours }, entregaConfig: { puntoEntrega: newStore.puntoEntrega, instrucciones: newStore.instrucciones, fotoUploaded: newStore.fotoUploaded }, completed: { bank: false, horarios: false, entrega: false } } }));
+                  setActiveTab(newId);
+                  setShowNewStoreWizard(false);
+                }
+              }}
+                style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                {newStoreStep < 2 ? "Siguiente" : "Guardar sucursal"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Store panel content */}
+        {!showNewStoreWizard && activeTab && storeData[activeTab] && (() => {
+          const store = stores.find(s => s.id === activeTab);
+          const sd = storeData[activeTab];
+          if (!store || !sd) return null;
+
+          return (
+            <div>
+              <h2 style={h2Style}>Panel de Tienda: {store.nombre}</h2>
+              <p style={descStyle}>Completa la configuración específica para <strong>{store.nombre}</strong>.</p>
+
+              {/* Cuenta Bancaria */}
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: "white", marginTop: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <BankIcon />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>Cuenta Bancaria</div>
+                      <div style={{ fontSize: 12, color: "#6b7280" }}>Gestiona la cuenta bancaria asociada a esta tienda.</div>
+                    </div>
+                  </div>
+                  {!sd.showBankForm && (
+                    <button onClick={() => { updateStoreData(activeTab, "editingBank", null); updateStoreData(activeTab, "showBankForm", true); }}
+                      style={{ padding: "8px 16px", border: "1px solid #e5e7eb", borderRadius: 20, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 4, color: "#111" }}>
+                      <PlusIcon /> Agregar cuenta
+                    </button>
+                  )}
+                </div>
+
+                {sd.bankAccounts.map((acc, i) => (
+                  <BankCard key={i} account={acc}
+                    onEdit={() => { updateStoreData(activeTab, "editingBank", i); updateStoreData(activeTab, "showBankForm", true); }}
+                    onDelete={() => {
+                      const newAccs = sd.bankAccounts.filter((_, j) => j !== i);
+                      updateStoreData(activeTab, "bankAccounts", newAccs);
+                      if (newAccs.length === 0) updateStoreCompleted(activeTab, "bank", false);
+                    }} />
+                ))}
+
+                {sd.showBankForm && (
+                  <BankForm
+                    account={sd.editingBank !== null ? sd.bankAccounts[sd.editingBank] : null}
+                    onSave={(acc) => {
+                      let newAccs;
+                      if (sd.editingBank !== null) {
+                        newAccs = sd.bankAccounts.map((a, i) => i === sd.editingBank ? acc : a);
+                      } else {
+                        newAccs = [...sd.bankAccounts, acc];
+                      }
+                      updateStoreData(activeTab, "bankAccounts", newAccs);
+                      updateStoreData(activeTab, "showBankForm", false);
+                      updateStoreData(activeTab, "editingBank", null);
+                      updateStoreCompleted(activeTab, "bank", true);
+                    }}
+                    onCancel={() => { updateStoreData(activeTab, "showBankForm", false); updateStoreData(activeTab, "editingBank", null); }}
+                  />
+                )}
+
+                {sd.bankAccounts.length === 0 && !sd.showBankForm && (
+                  <div style={{ textAlign: "center", padding: "24px 20px", color: "#9ca3af", border: "2px dashed #e5e7eb", borderRadius: 8, fontSize: 13 }}>
+                    No hay cuentas bancarias. Haz clic en "Agregar cuenta" para comenzar.
+                  </div>
+                )}
+              </div>
+
+              {/* Horarios & Instrucciones */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+                <div style={{ border: sd.completed.horarios ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: sd.completed.horarios ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Horarios de atención</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Configura los días y horas de apertura de esta sucursal.</p>
+                  {!sd.completed.horarios ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 13 }}>Pendiente</span>
+                      <button onClick={() => updateStoreCompleted(activeTab, "horarios", true)}
+                        style={{ padding: "8px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        Iniciar
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircleIcon /> <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13 }}>Completado</span></div>
+                  )}
+                </div>
+                <div style={{ border: sd.completed.entrega ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: sd.completed.entrega ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Instrucciones de Entrega</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Configura el punto de entrega y las instrucciones especiales.</p>
+                  {!sd.completed.entrega ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 13 }}>Pendiente</span>
+                      <button onClick={() => updateStoreCompleted(activeTab, "entrega", true)}
+                        style={{ padding: "8px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        Iniciar
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircleIcon /> <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13 }}>Completado</span></div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  };
+
+  // ═══════ MAIN LAYOUT ═══════
+  return (
+    <div style={{ fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif", background: "#f8f9fb", minHeight: "100vh", color: "#111" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 32px", borderBottom: "1px solid #e5e7eb", background: "white" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Proceso Comercial</h1>
+            <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 12 }}>Completado</span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>v1.17.3</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+            Procesos Comerciales › Buscador › <strong style={{ color: "#374151" }}>Expansión de tienda</strong>
+          </div>
+        </div>
+        <button style={{ padding: "8px 20px", border: "1px solid #ef4444", borderRadius: 20, background: "white", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          Cancelar
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 24px 40px" }}>
+        {/* Razón Social Banner */}
+        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 20px", margin: "20px 0", display: "flex", alignItems: "center", gap: 12 }}>
+          <PersonIcon />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Razón social</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>{razonSocial.nombre} | {razonSocial.nit} | {razonSocial.razon} | {razonSocial.email}</div>
+          </div>
+        </div>
+
+        {!wizardDone && (
+          <>
+            <div style={{ background: "white", borderRadius: "16px 16px 0 0", border: "1px solid #e5e7eb", borderBottom: "none" }}>
+              <Stepper current={step} completed={completed} />
+            </div>
+            <div style={{ background: "white", borderRadius: "0 0 16px 16px", border: "1px solid #e5e7eb", borderTop: "none", padding: "28px 32px" }}>
+              {renderStep()}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+              <button onClick={goBack} disabled={step === 0}
+                style={{ padding: "10px 28px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, fontWeight: 600, cursor: step === 0 ? "default" : "pointer", color: step === 0 ? "#d1d5db" : "#2563eb" }}>
+                Volver
+              </button>
+              <button onClick={goNext}
+                style={{ padding: "10px 28px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                {step === 4 ? "Cerrar" : "Siguiente"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {wizardDone && (
+          <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: "28px 32px" }}>
+            {renderPanel()}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(ExpansionTienda));
+</script>
+</body>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup - Renegociación de Contrato</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fb; }
+  select, input, textarea, button { font-family: inherit; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ── Icons ──
+const CheckIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+const EditIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const TrashIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>;
+const BankIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>;
+const PlusIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const CloseIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+const CheckCircle = ({ color = "#16a34a", size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const FileCheck = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>;
+const PersonIcon = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+const DocIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+const LocationIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+const MenuIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>;
+const ImagePlaceholder = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>;
+const PowerIcon = ({ on }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={on ? "#16a34a" : "#ef4444"} strokeWidth="2.5" strokeLinecap="round"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>;
+const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+
+// ── Stepper ──
+const STEPS = ["Formulario de marca", "Documentos", "Formulario de Razón Social", "Formulario de Cuenta Bancaria", "Edición de Condiciones Contractuales", "Actualización del menú de restaurante", "Logo y Portada", "Horarios de Tienda", "Confirmación de Datos"];
+
+function Stepper({ current, completed }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 8px 14px", position: "relative", overflowX: "auto" }}>
+      {STEPS.map((label, i) => {
+        const done = completed.includes(i);
+        const active = i === current;
+        const isLast = i === STEPS.length - 1;
+        return (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "1 0 0", minWidth: 80, position: "relative" }}>
+            {!isLast && <div style={{ position: "absolute", top: 15, left: "calc(50% + 16px)", right: "calc(-50% + 16px)", height: 3, background: done ? "#2563eb" : "#e5e7eb", zIndex: 0, borderRadius: 2 }} />}
+            <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: done || active ? "#2563eb" : "#f3f4f6", color: done || active ? "white" : "#9ca3af", fontWeight: 700, fontSize: 12, zIndex: 1, border: done || active ? "3px solid #2563eb" : "2px solid #e5e7eb", transition: "all .3s" }}>
+              {i + 1}
+            </div>
+            <span style={{ fontSize: 9, marginTop: 4, color: active ? "#2563eb" : done ? "#2563eb" : "#9ca3af", fontWeight: active ? 700 : 500, textAlign: "center", lineHeight: 1.2, maxWidth: 100 }}>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Field ──
+function Field({ label, value, onChange, dropdown, half, disabled, placeholder, type = "text", green }) {
+  const borderColor = green ? "#bbf7d0" : "#e5e7eb";
+  return (
+    <div style={{ flex: half ? "0 0 48%" : "1 1 100%", minWidth: half ? 140 : 0 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: green ? "#16a34a" : "#6b7280", textTransform: "uppercase", letterSpacing: ".5px" }}>{label}</label>
+      {dropdown ? (
+        <div style={{ position: "relative" }}>
+          <select value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${borderColor}`, borderRadius: 8, fontSize: 14, fontWeight: 500, appearance: "none", background: disabled ? "#f9fafb" : "white", color: "#111", cursor: disabled ? "default" : "pointer" }}>
+            {dropdown.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#9ca3af", fontSize: 12 }}>▼</span>
+        </div>
+      ) : (
+        <input type={type} value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${borderColor}`, borderRadius: 8, fontSize: 14, fontWeight: 500, background: disabled ? "#f9fafb" : "white", color: "#111", boxSizing: "border-box" }} />
+      )}
+    </div>
+  );
+}
+
+// ── Bank Form ──
+function BankForm({ account, onSave, onCancel }) {
+  const [f, setF] = useState(account || { titular: "GLOBAL MARKET CONNECTION SAS", tipoId: "NIT", numId: "9009744512", banco: "", tipoCuenta: "Cuenta de Ahorros", numCuenta: "0550116800032033", domicilio: "CL 29 5 100 AV FERROCARRIL LC 2", prefijo: "+57", telefono: "", email: "Marketplusr.2016@gmail.com", certUploaded: false });
+  const u = (k, v) => setF(p => ({ ...p, [k]: v }));
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white", position: "relative" }}>
+      <button onClick={onCancel} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+      <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 18px" }}>{account ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h3>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 55%", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Nombre del titular de la cuenta" value={f.titular} onChange={v => u("titular", v)} /><Field label="Tipo de identificación" value={f.tipoId} onChange={v => u("tipoId", v)} dropdown={["NIT", "CUIT", "CC", "CE", "Pasaporte"]} half /></div>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Identidad del titular de la cuenta" value={f.numId} onChange={v => u("numId", v)} half /><Field label="Seleccione un banco" value={f.banco} onChange={v => u("banco", v)} dropdown={["", "Davivienda", "Bancolombia", "BBVA", "Banco de Bogotá", "Nequi", "Mercado Pago"]} half /></div>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Tipo de cuenta" value={f.tipoCuenta} onChange={v => u("tipoCuenta", v)} dropdown={["Cuenta de Ahorros", "Cuenta Corriente"]} half /><Field label="Número de cuenta" value={f.numCuenta} onChange={v => u("numCuenta", v)} half /></div>
+          <Field label="Domicilio fiscal" value={f.domicilio} onChange={v => u("domicilio", v)} />
+          <div style={{ display: "flex", gap: 12 }}><Field label="Prefijo de país" value={f.prefijo} onChange={v => u("prefijo", v)} dropdown={["+57", "+54", "+52"]} half /><Field label="Teléfono de contacto" value={f.telefono} onChange={v => u("telefono", v)} placeholder="Teléfono de contacto" half /></div>
+          <Field label="Correo electrónico de facturación" value={f.email} onChange={v => u("email", v)} />
+        </div>
+        <div style={{ flex: "1 1 35%", minWidth: 220 }}>
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Certificado Bancario <span style={{ color: "#ef4444" }}>*</span></div>
+            <p style={{ fontSize: 11, color: "#6b7280", margin: "6px 0 12px", lineHeight: 1.4 }}>Sube el certificado bancario vigente (máx. 30 días).</p>
+            {f.certUploaded ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8 }}>
+                <FileCheck /><div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>Certificado_Banco.pdf</div><div style={{ fontSize: 11, color: "#16a34a" }}>Cargado</div></div>
+              </div>
+            ) : (
+              <button onClick={() => u("certUploaded", true)} style={{ width: "100%", padding: 20, border: "2px dashed #d1d5db", borderRadius: 8, background: "#fafafa", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#6b7280", fontSize: 12 }}><UploadIcon /> Subir certificado</button>
+            )}
+            <div style={{ marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, background: "#fafafa", minHeight: 120, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ textAlign: "center", color: "#9ca3af", fontSize: 12 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 4 }}>CERTIFICACION</div>
+                <div>Vista previa del certificado</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+        <button onClick={onCancel} style={{ padding: "10px 20px", background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#374151" }}>Cancelar</button>
+        <button onClick={() => onSave({ ...f, certUploaded: true })} style={{ padding: "10px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><CheckCircle color="white" size={18} /> Guardar cuenta</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Hours Table ──
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const HOURS = [];
+for (let h = 0; h < 24; h++) { HOURS.push(`${String(h).padStart(2, "0")}:00`); HOURS.push(`${String(h).padStart(2, "0")}:30`); }
+
+function HoursTable({ hours, onChange }) {
+  const total = DAYS.reduce((s, d) => { const o = parseFloat(hours[d]?.open || "0"); const c = parseFloat(hours[d]?.close || "0"); return s + Math.max(c - o, 0); }, 0);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, color: "#6b7280" }}>Min. horas:</span><span style={{ padding: "3px 10px", background: "#f3f4f6", borderRadius: 6, fontSize: 13, fontWeight: 600 }}>40</span></div>
+        <div style={{ fontSize: 13 }}>Horas registradas: <strong>{total.toFixed(1)}</strong></div>
+      </div>
+      <div style={{ borderTop: "1px solid #e5e7eb" }}>
+        <div style={{ display: "flex", padding: "10px 0", fontWeight: 700, fontSize: 13 }}><div style={{ width: 100 }}>Día</div><div style={{ width: 110 }}>Abre</div><div style={{ width: 110 }}>Cierra</div></div>
+        {DAYS.map(d => (
+          <div key={d} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ width: 100, fontSize: 14 }}>{d}</div>
+            <div style={{ width: 110 }}><select value={hours[d]?.open || "12:00"} onChange={e => onChange(d, "open", e.target.value)} style={{ padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, background: "#f9fafb", cursor: "pointer" }}>{HOURS.map(h => <option key={h}>{h}</option>)}</select></div>
+            <div style={{ width: 110 }}><select value={hours[d]?.close || "20:30"} onChange={e => onChange(d, "close", e.target.value)} style={{ padding: "5px 8px", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, background: "#f9fafb", cursor: "pointer" }}>{HOURS.map(h => <option key={h}>{h}</option>)}</select></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// ── MAIN APP ──
+// ══════════════════════════════════
+function RenegociacionContrato() {
+  const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState([]);
+  const [wizardDone, setWizardDone] = useState(false);
+
+  const razonSocial = { nombre: "FARID OLIVIER CHAJARA", nit: "NIT 900974451", razon: "GLOBAL MARKET CONNECTION S.A.S.", email: "Marketplusr.2016@gmail.com" };
+
+  // Step 1 - Formulario de marca
+  const [aliado, setAliado] = useState("Delice Del Mundo");
+  const [nuevoNombre, setNuevoNombre] = useState("Delice Del Mundo");
+  const [tiendas, setTiendas] = useState([
+    { id: 1, nombre: "Délice Del Mundo_2", storeId: "900384770", direccion: "Cra. 13 #6-1, Gaira, Santa Marta, Magdalena, Colombia", activa: true },
+    { id: 2, nombre: "Délice Del Mundo", storeId: "900384771", direccion: "6RJ2+W2F, Santa Marta, Magdalena, Colombia", activa: true },
+  ]);
+  const toggleTienda = (id) => setTiendas(p => p.map(t => t.id === id ? { ...t, activa: !t.activa } : t));
+
+  // Step 2 - Documentos
+  const [tipoPersona, setTipoPersona] = useState("Persona Jurídica");
+  const [docs, setDocs] = useState({ certBancario: true, rut: true, frente: true, reverso: true, camara: true });
+
+  // Step 3 - Razón Social
+  const [rs, setRs] = useState({ tipoPersona: "Persona jurídica", regimenFiscal: "48 – Reponsable del Impuesto sobre las ventas – IVA", claseContribuyente: "Responsable de Iva", digitoVerif: "2", tipoDoc: "", numDoc: "900974451", razonSocial: "GLOBAL MARKET CONNECTION S.A.S.", repNombre: "FARID", repApellido: "CHAJARA", repTipoDoc: "Pasaporte", repNumDoc: "4115CH70619", repEmail: "Marketplusr.2016@gmail.com" });
+
+  // Step 4 - Cuenta Bancaria
+  const [bankAccount, setBankAccount] = useState({ titular: "GLOBAL MARKET CONNECTION SAS", tipoId: "NIT", numId: "9009744512", banco: "", tipoCuenta: "Cuenta de Ahorros", numCuenta: "0550116800032033", domicilio: "CL 29 5 100 AV FERROCARRIL LC 2", prefijo: "+57", telefono: "", email: "Marketplusr.2016@gmail.com", certUploaded: true });
+
+  // Step 5 - Condiciones
+  const [condiciones, setCondiciones] = useState({ tipoContrato: "No exclusivo", condEstandar: "Si", tipoDelivery: "Full Service", impuestos: "No", tiempoPrepOrden: "No", tiempoEsperaRT: "No", vigencia: "24 meses", requiereTablet: "No", comisionFueraTablet: "No", frecPagos: "Semanal", comisionPickup: "No", comisionPickUp: "0", inversionAds: "No" });
+
+  // Step 6 - Menú
+  const [menuUploaded, setMenuUploaded] = useState(false);
+
+  // Step 7 - Logo y Portada
+  const [logoUploaded, setLogoUploaded] = useState(false);
+  const [portadaUploaded, setPortadaUploaded] = useState(false);
+
+  // Step 8 - Horarios
+  const defH = {}; DAYS.forEach(d => { defH[d] = { open: "12:00", close: "20:30" }; });
+  const [hours, setHours] = useState(defH);
+
+  // Step 9 - Confirmación
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+
+  // Post-wizard panel
+  const [activeTab, setActiveTab] = useState(null);
+  const [storeConfig, setStoreConfig] = useState({});
+  const [editingStore, setEditingStore] = useState(null);
+
+  const initPanel = () => {
+    const config = {};
+    tiendas.forEach(t => {
+      config[t.id] = { bankAccounts: [{ ...bankAccount }], showBankForm: false, editingBank: null, hoursConfig: { ...hours }, menuOk: false, completed: { bank: true, horarios: false, menu: false } };
+    });
+    setStoreConfig(config);
+    const firstActive = tiendas.find(t => t.activa);
+    setActiveTab(firstActive ? firstActive.id : null);
+  };
+
+  const goNext = () => {
+    if (step === 8) { setCompleted(p => [...new Set([...p, step])]); setWizardDone(true); initPanel(); return; }
+    setCompleted(p => [...new Set([...p, step])]); setStep(s => Math.min(s + 1, 8));
+  };
+  const goBack = () => setStep(s => Math.max(s - 1, 0));
+
+  const h2Style = { fontSize: 20, fontWeight: 700, color: "#111", margin: "0 0 6px" };
+  const descStyle = { fontSize: 13, color: "#6b7280", margin: "0 0 4px", lineHeight: 1.5 };
+
+  // ═══════ RENDER STEPS ═══════
+  const renderStep = () => {
+    switch (step) {
+      case 0: return (
+        <div>
+          <h2 style={h2Style}>Cambio de nombre comercial</h2>
+          <p style={descStyle}>Modifica el nombre comercial de tu negocio y revisa las tiendas que serán afectadas por este cambio.</p>
+          <div style={{ background: "#f9fafb", borderRadius: 8, padding: "12px 16px", marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>Aliado actual:</span>
+            <span style={{ fontWeight: 700, color: "#2563eb", fontSize: 14 }}>{aliado}</span>
+          </div>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 12 }}>Tiendas que serán afectadas por el cambio:</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {tiendas.map(t => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", padding: "14px 16px", border: t.activa ? "2px solid #bfdbfe" : "1px solid #fecaca", borderRadius: 10, background: t.activa ? "#eff6ff" : "#fef2f2", transition: "all .2s" }}>
+                <div onClick={() => toggleTienda(t.id)} style={{ cursor: "pointer", marginRight: 10 }}>
+                  <PowerIcon on={t.activa} />
+                </div>
+                <LocationIcon />
+                <div style={{ marginLeft: 10, flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: t.activa ? "#111" : "#9ca3af", textDecoration: t.activa ? "none" : "line-through" }}>{t.nombre} · Store ID: {t.storeId}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{t.direccion}</div>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12, background: t.activa ? "#dcfce7" : "#fee2e2", color: t.activa ? "#16a34a" : "#ef4444" }}>
+                  {t.activa ? "Activa" : "Desactivada"}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <label style={{ fontSize: 13, color: "#374151", display: "block", marginBottom: 6 }}>Ingresa el nuevo nombre comercial (Brand):</label>
+            <Field label="Nuevo nombre comercial" value={nuevoNombre} onChange={setNuevoNombre} green />
+          </div>
+        </div>
+      );
+
+      case 1: return (
+        <div>
+          <h2 style={h2Style}>Documentos</h2>
+          <p style={descStyle}>Selecciona el tipo de persona y sube los documentos correspondientes para continuar con el proceso. Asegúrate de que los archivos sean legibles.</p>
+          <div style={{ marginTop: 12, marginBottom: 20 }}><Field label="Tipo de persona" value={tipoPersona} onChange={setTipoPersona} dropdown={["Persona Jurídica", "Persona Natural"]} green /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[{ k: "certBancario", l: "Certificado Bancario", s: "BANK_ACCOUNT" }, { k: "rut", l: "RUT", s: "BUSINESS_ID_DOCUMENT" }, { k: "frente", l: "Frente del documento", s: "LEGAL_AGENT_DOCUMENT_FRONT" }, { k: "reverso", l: "Reverso del documento", s: "LEGAL_AGENT_DOCUMENT_BACK" }, { k: "camara", l: "Cámara de Comercio", s: "LEGAL_REPRESENTATIVE_POWER_DOCUMENT" }].map(d => (
+              <div key={d.k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", border: docs[d.k] ? "1px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 10, background: docs[d.k] ? "#f0fdf4" : "white" }}>
+                {docs[d.k] ? <CheckCircle /> : <DocIcon />}
+                <div style={{ flex: 1 }}><div style={{ fontWeight: 500, fontSize: 13, color: docs[d.k] ? "#6b7280" : "#111" }}>{d.l}</div><div style={{ fontSize: 11, color: docs[d.k] ? "#16a34a" : "#9ca3af" }}>{d.s}</div></div>
+                {docs[d.k] && <><button style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><DocIcon /></button><button onClick={() => setDocs(p => ({ ...p, [d.k]: false }))} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><CloseIcon /></button></>}
+                {!docs[d.k] && <button onClick={() => setDocs(p => ({ ...p, [d.k]: true }))} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><UploadIcon /></button>}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+      case 2: { const u = (k, v) => setRs(p => ({ ...p, [k]: v })); return (
+        <div>
+          <h2 style={h2Style}>Formulario de Razón Social</h2>
+          <p style={descStyle}>Por favor, ingresa los siguientes datos para continuar con el proceso.</p>
+          <div style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 50%", minWidth: 300 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Restaurante</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <Field label="Tipo de persona" value={rs.tipoPersona} onChange={v => u("tipoPersona", v)} dropdown={["Persona jurídica", "Persona humana"]} />
+                <Field label="Régimen fiscal" value={rs.regimenFiscal} onChange={v => u("regimenFiscal", v)} dropdown={["48 – Reponsable del Impuesto sobre las ventas – IVA", "49 – No responsable de IVA"]} />
+                <Field label="Clase de contribuyente" value={rs.claseContribuyente} onChange={v => u("claseContribuyente", v)} dropdown={["Responsable de Iva", "No responsable"]} />
+                <Field label="Dígito de verificación" value={rs.digitoVerif} onChange={v => u("digitoVerif", v)} />
+                <div style={{ display: "flex", gap: 12 }}><Field label="Tipo de documento" value={rs.tipoDoc} onChange={v => u("tipoDoc", v)} dropdown={["", "NIT", "CC", "CE"]} half /><Field label="Número del documento" value={rs.numDoc} onChange={v => u("numDoc", v)} half /></div>
+                <Field label="Razón Social" value={rs.razonSocial} onChange={v => u("razonSocial", v)} />
+              </div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: "20px 0 12px" }}>Representante Legal</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "flex", gap: 12 }}><Field label="Nombre" value={rs.repNombre} onChange={v => u("repNombre", v)} half /><Field label="Apellido" value={rs.repApellido} onChange={v => u("repApellido", v)} half /></div>
+                <div style={{ display: "flex", gap: 12 }}><Field label="Tipo de documento" value={rs.repTipoDoc} onChange={v => u("repTipoDoc", v)} dropdown={["Pasaporte", "CC", "CE"]} half /><Field label="Número del documento" value={rs.repNumDoc} onChange={v => u("repNumDoc", v)} half /></div>
+                <Field label="Correo electrónico" value={rs.repEmail} onChange={v => u("repEmail", v)} />
+              </div>
+            </div>
+            <div style={{ flex: "1 1 40%", minWidth: 280 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>Certificado Bancario.pdf (1/7)</div>
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: "#fafafa", minHeight: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ textAlign: "center", color: "#374151" }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 12 }}>CERTIFICACION</div>
+                  <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.6, maxWidth: 280 }}>MAGDALENA, SANTA MARTA, 26/02/2026<br />A quién interese<br /><br />Por medio de la presente hacemos constar que nuestro cliente <strong>GLOBAL MARKET CONNECTION S.A.S</strong> con NIT 9009744512 posee en el Banco Davivienda.<br /><br /><strong>CUENTA DE AHORROS DAMAS</strong><br />Número: 0550116800032033</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ); }
+
+      case 3: return (
+        <div>
+          <h2 style={h2Style}>Formulario de Cuenta Bancaria</h2>
+          <p style={descStyle}>Por favor, ingresa los siguientes datos para continuar con el proceso.</p>
+          <div style={{ marginTop: 16 }}>
+            <BankForm account={bankAccount} onSave={acc => { setBankAccount(acc); goNext(); }} onCancel={() => {}} />
+          </div>
+        </div>
+      );
+
+      case 4: { const u = (k, v) => setCondiciones(p => ({ ...p, [k]: v })); return (
+        <div>
+          <h2 style={h2Style}>Edición de Condiciones Contractuales</h2>
+          <p style={descStyle}>Modifica las condiciones según la nueva negociación. Los campos modificados se resaltarán en verde.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 14px", marginTop: 16 }}>
+            <Field label="Tipo de contrato" value={condiciones.tipoContrato} onChange={v => u("tipoContrato", v)} dropdown={["No exclusivo", "Exclusivo"]} />
+            <Field label="Condiciones estándar?" value={condiciones.condEstandar} onChange={v => u("condEstandar", v)} dropdown={["Si", "No"]} />
+            <Field label="Tipo de delivery" value={condiciones.tipoDelivery} onChange={v => u("tipoDelivery", v)} dropdown={["Full Service", "Marketplace"]} />
+            <Field label="Impuestos 1.5%?" value={condiciones.impuestos} onChange={v => u("impuestos", v)} dropdown={["No", "Si"]} />
+            <Field label="Prep. orden >40 min?" value={condiciones.tiempoPrepOrden} onChange={v => u("tiempoPrepOrden", v)} dropdown={["No", "Si"]} />
+            <Field label="Espera RT post-cooking?" value={condiciones.tiempoEsperaRT} onChange={v => u("tiempoEsperaRT", v)} dropdown={["No", "Si"]} />
+            <Field label="Vigencia" value={condiciones.vigencia} onChange={v => u("vigencia", v)} dropdown={["24 meses", "12 meses", "36 meses"]} />
+            <Field label="Requiere tablet" value={condiciones.requiereTablet} onChange={v => u("requiereTablet", v)} dropdown={["No", "Si"]} />
+            <Field label="Comisión fuera tablet?" value={condiciones.comisionFueraTablet} onChange={v => u("comisionFueraTablet", v)} dropdown={["No", "Si"]} />
+            <Field label="Frecuencia de pagos" value={condiciones.frecPagos} onChange={v => u("frecPagos", v)} dropdown={["Semanal", "Quincenal"]} />
+            <Field label="Comisión pickup" value={condiciones.comisionPickup} onChange={v => u("comisionPickup", v)} dropdown={["No", "Si"]} />
+            <Field label="Inversión ads" value={condiciones.inversionAds} onChange={v => u("inversionAds", v)} dropdown={["No", "Si"]} />
+          </div>
+        </div>
+      ); }
+
+      case 5: return (
+        <div>
+          <h2 style={h2Style}>Actualización del menú de restaurante</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>Carga automática del menú</span>
+            <span style={{ background: "#dbeafe", color: "#2563eb", fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 12 }}>Automático</span>
+          </div>
+          <p style={descStyle}>Sube una imagen o PDF del menú del restaurante y nuestro sistema lo procesará automáticamente.</p>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <button onClick={() => setMenuUploaded(true)} style={{ padding: "8px 16px", border: "1px solid #111", borderRadius: 8, background: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cargar varias imágenes</button>
+          </div>
+          <div style={{ border: menuUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, padding: 40, textAlign: "center", background: menuUploaded ? "#f0fdf4" : "#fafafa", cursor: "pointer", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }} onClick={() => setMenuUploaded(true)}>
+            {menuUploaded ? (<><FileCheck /><div style={{ fontWeight: 600, fontSize: 14, marginTop: 8, color: "#16a34a" }}>Menú generado</div><div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Revísalo para que termines de configurarlo.<br />menu_compressed.pdf</div></>) : (<><MenuIcon /><div style={{ fontWeight: 500, fontSize: 14, marginTop: 8 }}>Arrastra o haz clic para subir el menú</div></>)}
+          </div>
+        </div>
+      );
+
+      case 6: return (
+        <div>
+          <h2 style={h2Style}>Logo y Portada</h2>
+          <p style={descStyle}>Modifica el logo y Portada de la tienda</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 16 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Logo</div>
+              <div onClick={() => setLogoUploaded(true)} style={{ height: 240, border: logoUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, background: logoUploaded ? "#f0fdf4" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                {logoUploaded ? <><FileCheck /><span style={{ marginLeft: 8, fontWeight: 600, color: "#16a34a" }}>Logo cargado</span></> : <ImagePlaceholder />}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Portada</div>
+              <div onClick={() => setPortadaUploaded(true)} style={{ height: 240, border: portadaUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, background: portadaUploaded ? "#f0fdf4" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                {portadaUploaded ? <><FileCheck /><span style={{ marginLeft: 8, fontWeight: 600, color: "#16a34a" }}>Portada cargada</span></> : <ImagePlaceholder />}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      case 7: return (
+        <div>
+          <h2 style={h2Style}>Horarios de Tienda</h2>
+          <p style={descStyle}>Establece los horarios de operación para la nueva sucursal</p>
+          <div style={{ marginTop: 16 }}><HoursTable hours={hours} onChange={(d, f, v) => setHours(p => ({ ...p, [d]: { ...p[d], [f]: v } }))} /></div>
+        </div>
+      );
+
+      case 8: return (
+        <div>
+          <h2 style={h2Style}>Confirmación de Datos</h2>
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 20px", marginTop: 16, display: "flex", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>ℹ</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>¡Revisión del proceso!</div>
+              <div style={{ fontSize: 13, color: "#374151", marginTop: 2 }}>Estás visualizando la información de este proceso comercial en modo solo lectura. No puedes realizar cambios, pero puedes revisar todos los datos y documentos asociados.</div>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", fontWeight: 600, fontSize: 14, color: "#374151", margin: "20px 0 12px" }}>164058_SIGNED_CONTRACT.pdf (1/1)</div>
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px", maxWidth: 560, margin: "0 auto", background: "white" }}>
+            <h2 style={{ textAlign: "center", color: "#ef4444", fontSize: 26, fontWeight: 800, fontStyle: "italic", marginBottom: 16 }}>Rappi</h2>
+            <p style={{ fontSize: 11, lineHeight: 1.6, color: "#374151" }}><strong>Encabezado</strong> Rappi S.A.S. es una sociedad constituida conforme a las leyes de la República de Colombia, identificada con NIT 900.843.898-9, con domicilio en la ciudad de Bogotá D.C.</p>
+            <p style={{ fontSize: 11, lineHeight: 1.6, color: "#374151", marginTop: 8 }}><strong>Aplicación.</strong> Las Partes declaran que los presentes Términos y Condiciones únicamente aplicarán sobre la marca denominada comercialmente "{nuevoNombre}".</p>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>Resumen de Condiciones:</div>
+              <ul style={{ fontSize: 11, color: "#374151", paddingLeft: 18, margin: 0 }}><li>Tipo: {condiciones.tipoContrato}</li><li>Vigencia: {condiciones.vigencia}</li></ul>
+            </div>
+          </div>
+        </div>
+      );
+
+      default: return null;
+    }
+  };
+
+  // ═══════ PANEL POST-WIZARD ═══════
+  const renderPanel = () => {
+    const activeTiendas = tiendas.filter(t => t.activa);
+    const inactiveTiendas = tiendas.filter(t => !t.activa);
+
+    return (
+      <div>
+        <h2 style={h2Style}>Gestión de Tiendas — {nuevoNombre}</h2>
+        <p style={descStyle}>Administra las tiendas activas de la marca. Puedes desactivar, editar configuraciones o reactivar tiendas.</p>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", marginTop: 20, marginBottom: 20, gap: 0, flexWrap: "wrap" }}>
+          {tiendas.map(t => {
+            const sc = storeConfig[t.id];
+            const done = sc && sc.completed.bank && sc.completed.horarios && sc.completed.menu;
+            return (
+              <button key={t.id} onClick={() => { setActiveTab(t.id); setEditingStore(null); }}
+                style={{ padding: "10px 16px", fontSize: 13, fontWeight: activeTab === t.id ? 700 : 400, cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === t.id ? "2px solid #2563eb" : "none", color: !t.activa ? "#d1d5db" : activeTab === t.id ? "#2563eb" : "#6b7280", display: "flex", alignItems: "center", gap: 6, textDecoration: !t.activa ? "line-through" : "none" }}>
+                <PowerIcon on={t.activa} /> {t.nombre}
+                {done && t.activa && <CheckCircle color="#16a34a" size={16} />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Store panel */}
+        {activeTab && (() => {
+          const store = tiendas.find(t => t.id === activeTab);
+          const sc = storeConfig[activeTab];
+          if (!store || !sc) return null;
+
+          if (!store.activa) return (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#ef4444" }}>Tienda Desactivada</h3>
+              <p style={{ fontSize: 14, color: "#6b7280", marginTop: 6 }}>{store.nombre} está actualmente desactivada y no será incluida en la renegociación.</p>
+              <button onClick={() => toggleTienda(store.id)} style={{ marginTop: 16, padding: "10px 24px", background: "#16a34a", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                Reactivar tienda
+              </button>
+            </div>
+          );
+
+          const updateSC = (field, value) => setStoreConfig(p => ({ ...p, [activeTab]: { ...p[activeTab], [field]: value } }));
+          const updateCompleted = (field, value) => setStoreConfig(p => ({ ...p, [activeTab]: { ...p[activeTab], completed: { ...p[activeTab].completed, [field]: value } } }));
+
+          return (
+            <div>
+              {/* Store info header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "#eff6ff", borderRadius: 10, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <LocationIcon />
+                  <div><div style={{ fontWeight: 700, fontSize: 15 }}>{store.nombre}</div><div style={{ fontSize: 12, color: "#6b7280" }}>Store ID: {store.storeId} · {store.direccion}</div></div>
+                </div>
+                <button onClick={() => toggleTienda(store.id)} style={{ padding: "6px 14px", border: "1px solid #ef4444", borderRadius: 20, background: "white", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  Desactivar
+                </button>
+              </div>
+
+              {/* Cuenta Bancaria */}
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: "white", marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}><BankIcon /><div><div style={{ fontWeight: 700, fontSize: 14 }}>Cuenta Bancaria</div><div style={{ fontSize: 12, color: "#6b7280" }}>Gestiona la cuenta bancaria de esta tienda.</div></div></div>
+                  {!sc.showBankForm && <button onClick={() => { updateSC("editingBank", null); updateSC("showBankForm", true); }} style={{ padding: "6px 14px", border: "1px solid #e5e7eb", borderRadius: 20, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><PlusIcon /> Agregar</button>}
+                </div>
+                {sc.bankAccounts.map((acc, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 10, background: "white", marginBottom: 8 }}>
+                    <BankIcon /><div style={{ marginLeft: 10, flex: 1 }}><div style={{ fontWeight: 600, fontSize: 13 }}>{acc.banco || "Banco"} - {acc.tipoCuenta}</div><div style={{ fontSize: 11, color: "#6b7280" }}>{acc.titular} · <code style={{ fontSize: 10, background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>{acc.numCuenta}</code></div><div style={{ fontSize: 10, color: "#16a34a", fontWeight: 600, marginTop: 2, display: "flex", alignItems: "center", gap: 3 }}><CheckCircle color="#16a34a" size={14} /> CERTIFICADO VALIDADO</div></div>
+                    <button onClick={() => { updateSC("editingBank", i); updateSC("showBankForm", true); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><EditIcon /></button>
+                    <button onClick={() => { updateSC("bankAccounts", sc.bankAccounts.filter((_, j) => j !== i)); if (sc.bankAccounts.length <= 1) updateCompleted("bank", false); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><TrashIcon /></button>
+                  </div>
+                ))}
+                {sc.showBankForm && <BankForm account={sc.editingBank !== null ? sc.bankAccounts[sc.editingBank] : null} onSave={acc => { let a; if (sc.editingBank !== null) { a = sc.bankAccounts.map((x, i) => i === sc.editingBank ? acc : x); } else { a = [...sc.bankAccounts, acc]; } updateSC("bankAccounts", a); updateSC("showBankForm", false); updateSC("editingBank", null); updateCompleted("bank", true); }} onCancel={() => { updateSC("showBankForm", false); updateSC("editingBank", null); }} />}
+              </div>
+
+              {/* Horarios, Menú cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div style={{ border: sc.completed.horarios ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: sc.completed.horarios ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Horarios de atención</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Configura los días y horas de apertura.</p>
+                  {!sc.completed.horarios ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 12 }}>Pendiente</span><button onClick={() => updateCompleted("horarios", true)} style={{ padding: "7px 18px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Iniciar</button></div>
+                  ) : <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} /><span style={{ color: "#16a34a", fontWeight: 600, fontSize: 12 }}>Completado</span></div>}
+                </div>
+                <div style={{ border: sc.completed.menu ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: sc.completed.menu ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Menú y catálogo</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Actualiza productos, precios y descripciones.</p>
+                  {!sc.completed.menu ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 12 }}>Pendiente</span><button onClick={() => updateCompleted("menu", true)} style={{ padding: "7px 18px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Iniciar</button></div>
+                  ) : <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} /><span style={{ color: "#16a34a", fontWeight: 600, fontSize: 12 }}>Completado</span></div>}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  };
+
+  // ═══════ LAYOUT ═══════
+  return (
+    <div style={{ fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif", background: "#f8f9fb", minHeight: "100vh", color: "#111" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 28px", borderBottom: "1px solid #e5e7eb", background: "white" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}><h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Proceso Comercial</h1><span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 12 }}>Completado</span><span style={{ fontSize: 11, color: "#9ca3af" }}>v1.17.3</span></div>
+          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Procesos Comerciales › Buscador › <strong style={{ color: "#374151" }}>Renegociación de contrato</strong></div>
+        </div>
+        <button style={{ padding: "8px 18px", border: "1px solid #ef4444", borderRadius: 20, background: "white", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px 40px" }}>
+        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: "12px 18px", margin: "16px 0", display: "flex", alignItems: "center", gap: 10 }}>
+          <PersonIcon /><div><div style={{ fontSize: 13, fontWeight: 600 }}>Razón social</div><div style={{ fontSize: 12, color: "#6b7280" }}>{razonSocial.nombre} | {razonSocial.nit} | {razonSocial.razon} | {razonSocial.email}</div></div>
+        </div>
+
+        {!wizardDone && (
+          <>
+            <div style={{ background: "white", borderRadius: "16px 16px 0 0", border: "1px solid #e5e7eb", borderBottom: "none" }}><Stepper current={step} completed={completed} /></div>
+            <div style={{ background: "white", borderRadius: "0 0 16px 16px", border: "1px solid #e5e7eb", borderTop: "none", padding: "24px 28px" }}>{renderStep()}</div>
+            {step !== 3 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+                <button onClick={goBack} disabled={step === 0} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, fontWeight: 600, cursor: step === 0 ? "default" : "pointer", color: step === 0 ? "#d1d5db" : "#2563eb" }}>Volver</button>
+                <button onClick={goNext} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{step === 8 ? "Cerrar" : "Siguiente"}</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {wizardDone && (
+          <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: "24px 28px" }}>{renderPanel()}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(RenegociacionContrato));
+</script>
+</body>
+</html>
