@@ -12,7 +12,7 @@
   .header h1 { font-size: 36px; font-weight: 800; color: white; margin-bottom: 8px; letter-spacing: -1px; }
   .header .badge { display: inline-block; background: linear-gradient(135deg, #ef4444, #f97316); color: white; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
   .header p { color: #94a3b8; font-size: 16px; line-height: 1.6; max-width: 500px; margin: 0 auto; }
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
   @media (max-width: 768px) { .cards { grid-template-columns: 1fr; } }
   .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px 24px; text-decoration: none; transition: all 0.3s; position: relative; overflow: hidden; cursor: pointer; }
   .card:hover { transform: translateY(-4px); border-color: #2563eb; box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15); }
@@ -52,16 +52,24 @@
     <a class="card" href="expansion-tienda.html">
       <div class="card-icon expansion">📍</div>
       <h2>Expansión de Tienda</h2>
-      <p>Apertura de nueva sucursal para un aliado existente: selección de tienda base, formulario, instrucciones de entrega, horarios y confirmación.</p>
-      <div class="steps"><span>5 pasos</span> + Panel de tiendas</div>
+      <p>Apertura de nueva sucursal para un aliado existente: selección de razón social y marca, formulario de tienda, cuentas bancarias y confirmación.</p>
+      <div class="steps"><span>4 pasos</span> + Panel de tiendas</div>
       <div class="arrow">→</div>
     </a>
 
     <a class="card" href="renegociacion-contrato.html">
       <div class="card-icon reneg">🔄</div>
       <h2>Renegociación de Contrato</h2>
-      <p>Renegociación con aliado existente: cambio de marca, documentos, razón social, cuenta bancaria, condiciones, menú, logo y horarios.</p>
-      <div class="steps"><span>9 pasos</span> + Gestión de tiendas</div>
+      <p>Renegociación con aliado existente: cambio de marca, documentos, razón social, cuenta bancaria, condiciones contractuales y confirmación.</p>
+      <div class="steps"><span>6 pasos</span> + Gestión de tiendas</div>
+      <div class="arrow">→</div>
+    </a>
+
+    <a class="card" href="expansion-marca.html">
+      <div class="card-icon" style="background: #2a1a3a;">🏷️</div>
+      <h2>Expansión de Marca</h2>
+      <p>Creación de nueva marca para un aliado existente: nombre comercial, formulario de tienda, cuenta bancaria, condiciones contractuales y confirmación.</p>
+      <div class="steps"><span>5 pasos</span> + Panel de tiendas</div>
       <div class="arrow">→</div>
     </a>
   </div>

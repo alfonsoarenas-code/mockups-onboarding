@@ -38,7 +38,7 @@ const PowerIcon = ({ on }) => <svg width="16" height="16" viewBox="0 0 24 24" fi
 const EyeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
 
 // ── Stepper ──
-const STEPS = ["Formulario de marca", "Documentos", "Formulario de Razón Social", "Formulario de Cuenta Bancaria", "Edición de Condiciones Contractuales", "Actualización del menú de restaurante", "Logo y Portada", "Horarios de Tienda", "Confirmación de Datos"];
+const STEPS = ["Formulario de marca", "Documentos", "Formulario de Razón Social", "Formulario de Cuenta Bancaria", "Edición de Condiciones Contractuales", "Confirmación de Datos"];
 
 function Stepper({ current, completed }) {
   return (
@@ -215,8 +215,8 @@ function RenegociacionContrato() {
   };
 
   const goNext = () => {
-    if (step === 8) { setCompleted(p => [...new Set([...p, step])]); setWizardDone(true); initPanel(); return; }
-    setCompleted(p => [...new Set([...p, step])]); setStep(s => Math.min(s + 1, 8));
+    if (step === 5) { setCompleted(p => [...new Set([...p, step])]); setWizardDone(true); initPanel(); return; }
+    setCompleted(p => [...new Set([...p, step])]); setStep(s => Math.min(s + 1, 5));
   };
   const goBack = () => setStep(s => Math.max(s - 1, 0));
 
@@ -344,52 +344,6 @@ function RenegociacionContrato() {
       ); }
 
       case 5: return (
-        <div>
-          <h2 style={h2Style}>Actualización del menú de restaurante</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>Carga automática del menú</span>
-            <span style={{ background: "#dbeafe", color: "#2563eb", fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 12 }}>Automático</span>
-          </div>
-          <p style={descStyle}>Sube una imagen o PDF del menú del restaurante y nuestro sistema lo procesará automáticamente.</p>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-            <button onClick={() => setMenuUploaded(true)} style={{ padding: "8px 16px", border: "1px solid #111", borderRadius: 8, background: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cargar varias imágenes</button>
-          </div>
-          <div style={{ border: menuUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, padding: 40, textAlign: "center", background: menuUploaded ? "#f0fdf4" : "#fafafa", cursor: "pointer", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }} onClick={() => setMenuUploaded(true)}>
-            {menuUploaded ? (<><FileCheck /><div style={{ fontWeight: 600, fontSize: 14, marginTop: 8, color: "#16a34a" }}>Menú generado</div><div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Revísalo para que termines de configurarlo.<br />menu_compressed.pdf</div></>) : (<><MenuIcon /><div style={{ fontWeight: 500, fontSize: 14, marginTop: 8 }}>Arrastra o haz clic para subir el menú</div></>)}
-          </div>
-        </div>
-      );
-
-      case 6: return (
-        <div>
-          <h2 style={h2Style}>Logo y Portada</h2>
-          <p style={descStyle}>Modifica el logo y Portada de la tienda</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 16 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Logo</div>
-              <div onClick={() => setLogoUploaded(true)} style={{ height: 240, border: logoUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, background: logoUploaded ? "#f0fdf4" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                {logoUploaded ? <><FileCheck /><span style={{ marginLeft: 8, fontWeight: 600, color: "#16a34a" }}>Logo cargado</span></> : <ImagePlaceholder />}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Portada</div>
-              <div onClick={() => setPortadaUploaded(true)} style={{ height: 240, border: portadaUploaded ? "2px solid #bbf7d0" : "2px dashed #d1d5db", borderRadius: 12, background: portadaUploaded ? "#f0fdf4" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                {portadaUploaded ? <><FileCheck /><span style={{ marginLeft: 8, fontWeight: 600, color: "#16a34a" }}>Portada cargada</span></> : <ImagePlaceholder />}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-
-      case 7: return (
-        <div>
-          <h2 style={h2Style}>Horarios de Tienda</h2>
-          <p style={descStyle}>Establece los horarios de operación para la nueva sucursal</p>
-          <div style={{ marginTop: 16 }}><HoursTable hours={hours} onChange={(d, f, v) => setHours(p => ({ ...p, [d]: { ...p[d], [f]: v } }))} /></div>
-        </div>
-      );
-
-      case 8: return (
         <div>
           <h2 style={h2Style}>Confirmación de Datos</h2>
           <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 20px", marginTop: 16, display: "flex", gap: 10 }}>
@@ -537,7 +491,7 @@ function RenegociacionContrato() {
             {step !== 3 && (
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
                 <button onClick={goBack} disabled={step === 0} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, fontWeight: 600, cursor: step === 0 ? "default" : "pointer", color: step === 0 ? "#d1d5db" : "#2563eb" }}>Volver</button>
-                <button onClick={goNext} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{step === 8 ? "Cerrar" : "Siguiente"}</button>
+                <button onClick={goNext} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{step === 5 ? "Cerrar" : "Siguiente"}</button>
               </div>
             )}
           </>

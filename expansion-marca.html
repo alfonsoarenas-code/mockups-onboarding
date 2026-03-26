@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup - Expansión de Marca</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fb; }
+  select, input, textarea, button { font-family: inherit; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── Icons ──
+const CheckIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const UploadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+const EditIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const TrashIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>;
+const BankIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>;
+const PlusIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const CloseIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+const CheckCircle = ({ color = "#16a34a", size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const FileCheck = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>;
+const PersonIcon = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+const LocationIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+const GlobeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>;
+
+const MapPlaceholder = () => (
+  <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 40%, #dbeafe 60%, #c7d2fe 100%)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, opacity: 0.12 }}>
+      {[...Array(8)].map((_, i) => <div key={i} style={{ position: "absolute", top: `${i * 14}%`, left: 0, right: 0, height: 1, background: "#6366f1" }} />)}
+      {[...Array(6)].map((_, i) => <div key={i} style={{ position: "absolute", left: `${i * 18}%`, top: 0, bottom: 0, width: 1, background: "#6366f1" }} />)}
+    </div>
+    <div style={{ width: 16, height: 16, background: "#ef4444", borderRadius: "50%", border: "3px solid white", boxShadow: "0 2px 6px rgba(0,0,0,.3)", zIndex: 1 }} />
+  </div>
+);
+
+// ── Stepper ──
+const STEPS = ["Nombre comercial", "Formulario de tienda básica", "Selección de Cuenta Bancaria", "Edición de Condiciones Contractuales", "Confirmación de Datos"];
+
+function Stepper({ current, completed }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "22px 12px 14px", position: "relative" }}>
+      {STEPS.map((label, i) => {
+        const done = completed.includes(i);
+        const active = i === current;
+        const isLast = i === STEPS.length - 1;
+        return (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative" }}>
+            {!isLast && <div style={{ position: "absolute", top: 16, left: "calc(50% + 18px)", right: "calc(-50% + 18px)", height: 3, background: done ? "#2563eb" : "#e5e7eb", zIndex: 0, borderRadius: 2 }} />}
+            <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: done || active ? "#2563eb" : "#f3f4f6", color: done || active ? "white" : "#9ca3af", fontWeight: 700, fontSize: 13, zIndex: 1, border: done || active ? "3px solid #2563eb" : "2px solid #e5e7eb", transition: "all .3s" }}>
+              {i + 1}
+            </div>
+            <span style={{ fontSize: 10, marginTop: 5, color: active ? "#2563eb" : done ? "#2563eb" : "#9ca3af", fontWeight: active ? 700 : 500, textAlign: "center", lineHeight: 1.2, maxWidth: 110 }}>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Field ──
+function Field({ label, value, onChange, dropdown, half, disabled, placeholder, type = "text", green }) {
+  const bc = green ? "#bbf7d0" : "#e5e7eb";
+  const bg = green ? "#f0fdf4" : disabled ? "#f9fafb" : "white";
+  return (
+    <div style={{ flex: half ? "0 0 48%" : "1 1 100%", minWidth: half ? 140 : 0 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: green ? "#16a34a" : "#6b7280", textTransform: "uppercase", letterSpacing: ".5px" }}>{label}</label>
+      {dropdown ? (
+        <div style={{ position: "relative" }}>
+          <select value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${bc}`, borderRadius: 8, fontSize: 14, fontWeight: 500, appearance: "none", background: bg, color: "#111", cursor: disabled ? "default" : "pointer" }}>
+            {dropdown.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#9ca3af", fontSize: 12 }}>▼</span>
+        </div>
+      ) : (
+        <input type={type} value={value} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", border: `1px solid ${bc}`, borderRadius: 8, fontSize: 14, fontWeight: 500, background: bg, color: "#111", boxSizing: "border-box" }} />
+      )}
+    </div>
+  );
+}
+
+// ── Toggle ──
+function Toggle({ label, checked, onChange }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#374151" }}>
+      <div onClick={() => onChange(!checked)} style={{ width: 40, height: 22, borderRadius: 11, background: checked ? "#2563eb" : "#d1d5db", position: "relative", transition: "background .2s", cursor: "pointer" }}>
+        <div style={{ width: 18, height: 18, borderRadius: "50%", background: "white", position: "absolute", top: 2, left: checked ? 20 : 2, transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+      </div>
+      {label}
+    </label>
+  );
+}
+
+// ── Bank Account Card ──
+function BankCard({ account, onEdit, onDelete, selected, onSelect }) {
+  return (
+    <div onClick={onSelect} style={{ display: "flex", alignItems: "center", padding: "16px 18px", border: selected ? "2px solid #2563eb" : "1px solid #e5e7eb", borderRadius: 12, background: selected ? "#eff6ff" : "white", marginBottom: 10, cursor: onSelect ? "pointer" : "default", transition: "all .2s" }}>
+      <BankIcon />
+      <div style={{ marginLeft: 12, flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{account.banco || "BANCO"}</div>
+        <div style={{ fontSize: 13, color: "#374151" }}>{account.tipoCuenta}</div>
+        <div style={{ fontSize: 13, color: "#374151" }}>{account.titular}</div>
+        <div style={{ fontSize: 13, color: "#111", marginTop: 2 }}>N° <strong>{account.numCuenta}</strong></div>
+        <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>ID de referencia de pago: {account.refPago || "—"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+          <GlobeIcon />
+          <span style={{ fontSize: 12, color: "#2563eb", fontWeight: 500 }}>Tiendas ({account.tiendas || 1})</span>
+        </div>
+      </div>
+      {onEdit && <button onClick={e => { e.stopPropagation(); onEdit(); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><EditIcon /></button>}
+      {onDelete && <button onClick={e => { e.stopPropagation(); onDelete(); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><TrashIcon /></button>}
+    </div>
+  );
+}
+
+// ── Bank Form ──
+function BankForm({ account, onSave, onCancel }) {
+  const [f, setF] = useState(account || { titular: "", tipoId: "NIT", numId: "", banco: "", tipoCuenta: "Cuenta de Ahorros", numCuenta: "", domicilio: "", prefijo: "+57", telefono: "", email: "", refPago: "", tiendas: 1, certUploaded: false });
+  const u = (k, v) => setF(p => ({ ...p, [k]: v }));
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white", position: "relative", marginTop: 16 }}>
+      <button onClick={onCancel} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+      <h3 style={{ fontSize: 17, fontWeight: 700, margin: "0 0 18px" }}>{account ? "Editar Cuenta Bancaria" : "Agregar Nueva Cuenta Bancaria"}</h3>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 55%", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Nombre del titular de la cuenta *" value={f.titular} onChange={v => u("titular", v)} /><Field label="Tipo de identificación" value={f.tipoId} onChange={v => u("tipoId", v)} dropdown={["NIT", "CC", "CE", "CUIT", "Pasaporte"]} half /></div>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Número de identificación *" value={f.numId} onChange={v => u("numId", v)} half /><Field label="Banco o entidad" value={f.banco} onChange={v => u("banco", v)} dropdown={["", "BANCOLOMBIA", "Davivienda", "BBVA", "Banco de Bogotá", "Nequi", "Banco Popular", "Scotiabank"]} half /></div>
+          <div style={{ display: "flex", gap: 12 }}><Field label="Tipo de cuenta" value={f.tipoCuenta} onChange={v => u("tipoCuenta", v)} dropdown={["Cuenta de Ahorros", "Cuenta Corriente", "Cuenta Ahorro"]} half /><Field label="Número de cuenta *" value={f.numCuenta} onChange={v => u("numCuenta", v)} half /></div>
+          <Field label="Domicilio fiscal" value={f.domicilio} onChange={v => u("domicilio", v)} />
+          <div style={{ display: "flex", gap: 12 }}><Field label="Prefijo" value={f.prefijo} onChange={v => u("prefijo", v)} dropdown={["+57", "+54", "+52", "+56"]} half /><Field label="Teléfono de contacto" value={f.telefono} onChange={v => u("telefono", v)} half /></div>
+          <Field label="Correo electrónico de facturación" value={f.email} onChange={v => u("email", v)} />
+        </div>
+        <div style={{ flex: "1 1 35%", minWidth: 220 }}>
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Certificado Bancario <span style={{ color: "#ef4444" }}>*</span></div>
+            <p style={{ fontSize: 11, color: "#6b7280", margin: "6px 0 12px", lineHeight: 1.4 }}>Es obligatorio subir un documento o imagen válido expedido por tu banco (máx. 30 días de vigencia).</p>
+            {f.certUploaded ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8 }}>
+                <FileCheck /><div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>Certificado_Banco.pdf</div><div style={{ fontSize: 11, color: "#16a34a" }}>Cargado exitosamente</div></div>
+              </div>
+            ) : (
+              <button onClick={() => u("certUploaded", true)} style={{ width: "100%", padding: 20, border: "2px dashed #d1d5db", borderRadius: 8, background: "#fafafa", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#6b7280", fontSize: 12 }}><UploadIcon /> Subir certificado</button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+        <button onClick={onCancel} style={{ padding: "10px 20px", background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#374151" }}>Cancelar</button>
+        <button onClick={() => onSave({ ...f, certUploaded: true })} style={{ padding: "10px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><CheckCircle color="white" size={18} /> Guardar cuenta</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Store Form for new stores ──
+function NewStoreForm({ onSave, onCancel }) {
+  const [s, setS] = useState({ nombre: "", direccion: "", tipoDoc: "NIT", numDoc: "", tipoComida: "Comida Rápida", prefijo: "+57", telefono: "", email: "", cocinaOculta: false, centroComercial: false });
+  const u = (k, v) => setS(p => ({ ...p, [k]: v }));
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Nueva Tienda</h3>
+        <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+      </div>
+      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>Ingresa los datos de la nueva sucursal para agregarla a la marca.</p>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 55%", minWidth: 280, display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Nombre de la tienda" value={s.nombre} onChange={v => u("nombre", v)} placeholder="Ej: FRITANGO Sucursal Norte" />
+          <Field label="Tipo de documento" value={s.tipoDoc} onChange={v => u("tipoDoc", v)} dropdown={["NIT", "CC", "CE"]} />
+          <Field label="Número de documento" value={s.numDoc} onChange={v => u("numDoc", v)} />
+          <Field label="Tipo de comida" value={s.tipoComida} onChange={v => u("tipoComida", v)} dropdown={["Comida Rápida", "Pizza", "Colombiana", "Mexicana", "Italiana", "Peruana", "Japonesa", "Americana"]} />
+          <div style={{ display: "flex", gap: 12 }}><Field label="Prefijo" value={s.prefijo} onChange={v => u("prefijo", v)} dropdown={["+57", "+54", "+52"]} half /><Field label="Teléfono" value={s.telefono} onChange={v => u("telefono", v)} half /></div>
+          <Field label="Correo electrónico" value={s.email} onChange={v => u("email", v)} placeholder="correo@ejemplo.com" />
+          <div style={{ display: "flex", gap: 20, paddingTop: 8 }}>
+            <Toggle label="Es cocina oculta" checked={s.cocinaOculta} onChange={v => u("cocinaOculta", v)} />
+            <Toggle label="Se encuentra en centro comercial" checked={s.centroComercial} onChange={v => u("centroComercial", v)} />
+          </div>
+        </div>
+        <div style={{ flex: "1 1 40%", minWidth: 260 }}>
+          <Field label="Dirección" value={s.direccion} onChange={v => u("direccion", v)} placeholder="Ej: Calle 20 101A-37, Cali" green />
+          <div style={{ marginTop: 12, height: 240, borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }}><MapPlaceholder /></div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+        <button onClick={onCancel} style={{ padding: "10px 20px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, cursor: "pointer" }}>Cancelar</button>
+        <button onClick={() => { if (s.nombre) onSave(s); }} style={{ padding: "10px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Guardar tienda</button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// ── MAIN APP ──
+// ══════════════════════════════════
+function ExpansionMarca() {
+  const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState([]);
+  const [wizardDone, setWizardDone] = useState(false);
+
+  const razonSocial = { nombre: "KAREN DARIELLA AMAYA GOMEZ", nit: "NIT 700493097", razon: "KAREN DARIELLA AMAYA GOMEZ", email: "Princesadedios1515@outlook.es" };
+
+  // Step 1 - Nombre comercial
+  const [nombreComercial, setNombreComercial] = useState("FRITANGO Calle 20 # 101 A - 37");
+
+  // Step 2 - Formulario tienda básica
+  const [tienda, setTienda] = useState({
+    nombre: "FRITANGO Calle 20 # 101 A - 37", direccion: "Calle 20 101A-37, Cali, Colombia",
+    tipoDoc: "NIT", numDoc: "700493097", tipoComida: "Comida Rápida",
+    prefijo: "+57", telefono: "3012387327", email: "Princesadedios1515@outlook.es",
+    cocinaOculta: false, centroComercial: false
+  });
+
+  // Step 3 - Cuentas Bancarias
+  const [bankAccounts, setBankAccounts] = useState([
+    { titular: "KAREN DARIELLA AMAYA GOMEZ", tipoId: "NIT", numId: "700493097", banco: "BANCOLOMBIA", tipoCuenta: "Cuenta Ahorro", numCuenta: "18079392070", domicilio: "", prefijo: "+57", telefono: "3012387327", email: "Princesadedios1515@outlook.es", refPago: "238412", tiendas: 1, certUploaded: true }
+  ]);
+  const [selectedBank, setSelectedBank] = useState(0);
+  const [showBankForm, setShowBankForm] = useState(false);
+  const [editingBank, setEditingBank] = useState(null);
+
+  // Step 4 - Condiciones
+  const [condTab, setCondTab] = useState("variables");
+  const [cond, setCond] = useState({
+    tipoContrato: "No exclusivo", condEstandar: "Si", tipoDelivery: "Full Service",
+    impuestos: "Si", aceptaVouchers: "No", feeActivacion: "No",
+    tiempoPrepOrden: "Si", tiempoEsperaRT: "Si", valorMulta: "1590",
+    minutosMulta: "10 (diez) minutos", vigencia: "12 meses", requiereTablet: "No",
+    comisionFueraTablet: "No", frecPagos: "Semanal nueva", comisionPickup: "Si",
+    inversionAds: "No"
+  });
+
+  // Step 5 - Confirmación
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+
+  // Post-wizard panel
+  const [stores, setStores] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
+  const [storeData, setStoreData] = useState({});
+  const [showNewStore, setShowNewStore] = useState(false);
+
+  useEffect(() => {
+    if (wizardDone && stores.length === 0) {
+      const id = 1;
+      setStores([{ id, nombre: tienda.nombre }]);
+      setStoreData({ [id]: { selectedBank: selectedBank, horariosOk: false, menuOk: false } });
+      setActiveTab(id);
+    }
+  }, [wizardDone]);
+
+  const goNext = () => {
+    if (step === 4) { setCompleted(p => [...new Set([...p, step])]); setWizardDone(true); return; }
+    setCompleted(p => [...new Set([...p, step])]); setStep(s => Math.min(s + 1, 4));
+  };
+  const goBack = () => setStep(s => Math.max(s - 1, 0));
+
+  const h2S = { fontSize: 20, fontWeight: 700, color: "#111", margin: "0 0 6px" };
+  const descS = { fontSize: 13, color: "#6b7280", margin: "0 0 4px", lineHeight: 1.5 };
+
+  // ═══════ RENDER STEPS ═══════
+  const renderStep = () => {
+    switch (step) {
+      // Step 1
+      case 0: return (
+        <div>
+          <h2 style={h2S}>Creación de nombre comercial</h2>
+          <p style={descS}>Ingresa el nombre comercial para la nueva marca que se va a crear en la plataforma.</p>
+          <div style={{ marginTop: 20, maxWidth: 460 }}>
+            <Field label="Nombre comercial" value={nombreComercial} onChange={setNombreComercial} green />
+          </div>
+        </div>
+      );
+
+      // Step 2
+      case 1: {
+        const u = (k, v) => setTienda(p => ({ ...p, [k]: v }));
+        return (
+          <div>
+            <h2 style={h2S}>Formulario de tienda básica</h2>
+            <p style={descS}>Por favor, ingresa los siguientes datos para continuar con el proceso.</p>
+            <div style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 50%", minWidth: 300, display: "flex", flexDirection: "column", gap: 12 }}>
+                <Field label="Nombre de la tienda" value={tienda.nombre} onChange={v => u("nombre", v)} />
+                <Field label="Tipo de documento" value={tienda.tipoDoc} onChange={v => u("tipoDoc", v)} dropdown={["NIT", "CC", "CE"]} />
+                <Field label="NIT" value={tienda.numDoc} onChange={v => u("numDoc", v)} />
+                <Field label="Tipo de comida" value={tienda.tipoComida} onChange={v => u("tipoComida", v)} dropdown={["Comida Rápida", "Pizza", "Colombiana", "Mexicana", "Italiana", "Peruana", "Japonesa"]} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <Field label="Prefijo" value={tienda.prefijo} onChange={v => u("prefijo", v)} dropdown={["+57", "+54", "+52"]} half />
+                  <Field label="Teléfono" value={tienda.telefono} onChange={v => u("telefono", v)} half />
+                </div>
+                <Field label="Correo electrónico" value={tienda.email} onChange={v => u("email", v)} />
+                <div style={{ display: "flex", gap: 20, paddingTop: 8 }}>
+                  <Toggle label="Es cocina oculta" checked={tienda.cocinaOculta} onChange={v => u("cocinaOculta", v)} />
+                  <Toggle label="Se encuentra en centro comercial" checked={tienda.centroComercial} onChange={v => u("centroComercial", v)} />
+                </div>
+              </div>
+              <div style={{ flex: "1 1 40%", minWidth: 280 }}>
+                <Field label="Dirección" value={tienda.direccion} onChange={v => u("direccion", v)} green />
+                <div style={{ marginTop: 12, height: 300, borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }}><MapPlaceholder /></div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Step 3 - Selección de Cuenta Bancaria
+      case 2: return (
+        <div>
+          <h2 style={h2S}>Selección de Cuenta Bancaria</h2>
+          <p style={descS}>Selecciona la cuenta bancaria cuyos datos deseas modificar</p>
+          <div style={{ marginTop: 20, maxWidth: 500 }}>
+            {bankAccounts.map((acc, i) => (
+              <BankCard key={i} account={acc} selected={selectedBank === i} onSelect={() => setSelectedBank(i)}
+                onEdit={() => { setEditingBank(i); setShowBankForm(true); }}
+                onDelete={bankAccounts.length > 1 ? () => { setBankAccounts(p => p.filter((_, j) => j !== i)); if (selectedBank >= bankAccounts.length - 1) setSelectedBank(0); } : null} />
+            ))}
+          </div>
+          <button onClick={() => { setEditingBank(null); setShowBankForm(true); }}
+            style={{ marginTop: 12, padding: "10px 20px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6, color: "#111" }}>
+            <PlusIcon /> Agregar nueva cuenta
+          </button>
+          {showBankForm && (
+            <BankForm
+              account={editingBank !== null ? bankAccounts[editingBank] : null}
+              onSave={acc => {
+                if (editingBank !== null) { setBankAccounts(p => p.map((a, i) => i === editingBank ? acc : a)); }
+                else { setBankAccounts(p => [...p, acc]); setSelectedBank(bankAccounts.length); }
+                setShowBankForm(false); setEditingBank(null);
+              }}
+              onCancel={() => { setShowBankForm(false); setEditingBank(null); }}
+            />
+          )}
+        </div>
+      );
+
+      // Step 4 - Condiciones
+      case 3: {
+        const u = (k, v) => setCond(p => ({ ...p, [k]: v }));
+        return (
+          <div>
+            <h2 style={h2S}>Edición de Condiciones Contractuales</h2>
+            <p style={descS}>Modifica las condiciones según la nueva negociación. Los campos modificados se resaltarán en verde.</p>
+            <div style={{ display: "flex", gap: 4, marginTop: 12, marginBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
+              <button onClick={() => setCondTab("variables")} style={{ padding: "8px 16px", fontWeight: condTab === "variables" ? 700 : 400, fontSize: 14, background: "none", border: "none", borderBottom: condTab === "variables" ? "2px solid #2563eb" : "none", color: condTab === "variables" ? "#2563eb" : "#9ca3af", cursor: "pointer" }}>Variables</button>
+              <button onClick={() => setCondTab("comision")} style={{ padding: "8px 16px", fontWeight: condTab === "comision" ? 700 : 400, fontSize: 14, background: "none", border: "none", borderBottom: condTab === "comision" ? "2px solid #2563eb" : "none", color: condTab === "comision" ? "#2563eb" : "#9ca3af", cursor: "pointer" }}>Comisión</button>
+            </div>
+            {condTab === "variables" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 14px" }}>
+                <Field label="Tipo de Contrato" value={cond.tipoContrato} onChange={v => u("tipoContrato", v)} dropdown={["No exclusivo", "Exclusivo"]} green />
+                <Field label="Contrato con condiciones estándar?" value={cond.condEstandar} onChange={v => u("condEstandar", v)} dropdown={["Si", "No"]} green />
+                <Field label="Tipo de Delivery" value={cond.tipoDelivery} onChange={v => u("tipoDelivery", v)} dropdown={["Full Service", "Marketplace"]} green />
+                <Field label="Incluye 1.5% para impuestos?" value={cond.impuestos} onChange={v => u("impuestos", v)} dropdown={["Si", "No"]} green />
+                <Field label="Acepta Vouchers" value={cond.aceptaVouchers} onChange={v => u("aceptaVouchers", v)} dropdown={["No", "Si"]} />
+                <Field label="El fee de activación es cobrado?" value={cond.feeActivacion} onChange={v => u("feeActivacion", v)} dropdown={["No", "Si"]} />
+                <Field label="Tiempo de preparación de orden superior a (40) minutos" value={cond.tiempoPrepOrden} onChange={v => u("tiempoPrepOrden", v)} dropdown={["Si", "No"]} green />
+                <Field label="Tiempo de espera de RT después de finalizado Cooking Time?" value={cond.tiempoEsperaRT} onChange={v => u("tiempoEsperaRT", v)} dropdown={["Si", "No"]} green />
+                <Field label="Valor de la Multa" value={cond.valorMulta} onChange={v => u("valorMulta", v)} />
+                <Field label="Minutos de espera para la multa" value={cond.minutosMulta} onChange={v => u("minutosMulta", v)} dropdown={["10 (diez) minutos", "15 (quince) minutos", "20 (veinte) minutos"]} green />
+                <Field label="Vigencia de Contrato" value={cond.vigencia} onChange={v => u("vigencia", v)} dropdown={["12 meses", "24 meses", "36 meses"]} green />
+                <Field label="Requiere Tablet" value={cond.requiereTablet} onChange={v => u("requiereTablet", v)} dropdown={["No", "Si"]} />
+                <Field label="Cobra comisión por pedido fuera de la tablet?" value={cond.comisionFueraTablet} onChange={v => u("comisionFueraTablet", v)} dropdown={["No", "Si"]} />
+                <Field label="Frecuencia de Pagos" value={cond.frecPagos} onChange={v => u("frecPagos", v)} dropdown={["Semanal nueva", "Semanal", "Quincenal"]} green />
+                <Field label="Comisión estandar pickup" value={cond.comisionPickup} onChange={v => u("comisionPickup", v)} dropdown={["Si", "No"]} green />
+                <Field label="Inversión de ADS" value={cond.inversionAds} onChange={v => u("inversionAds", v)} dropdown={["No", "Si"]} />
+              </div>
+            )}
+            {condTab === "comision" && (
+              <div style={{ padding: 20, textAlign: "center", color: "#9ca3af" }}>Configuración de comisión escalonada disponible aquí.</div>
+            )}
+          </div>
+        );
+      }
+
+      // Step 5 - Confirmación
+      case 4: return (
+        <div>
+          <h2 style={h2S}>Confirmación de Datos</h2>
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 20px", marginTop: 16, display: "flex", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>ℹ</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>¡Revisión del proceso!</div>
+              <div style={{ fontSize: 13, color: "#374151", marginTop: 2 }}>Estás visualizando la información de este proceso comercial en modo solo lectura. No puedes realizar cambios, pero puedes revisar todos los datos y documentos asociados.</div>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", fontWeight: 600, fontSize: 14, color: "#374151", margin: "24px 0 12px" }}>179560_SIGNED_CONTRACT.pdf (1/1)</div>
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: "28px 32px", maxWidth: 560, margin: "0 auto", background: "white" }}>
+            <h2 style={{ textAlign: "center", color: "#ef4444", fontSize: 26, fontWeight: 800, fontStyle: "italic", marginBottom: 16 }}>Rappi</h2>
+            <p style={{ fontSize: 11, lineHeight: 1.6, color: "#374151" }}><strong>Encabezado</strong> Rappi S.A.S. es una sociedad constituida conforme a las leyes de la República de Colombia, identificada con NIT 900.843.898-9, con domicilio en la Calle 63 # 16A-42 de la ciudad de Bogotá D.C.</p>
+            <p style={{ fontSize: 11, lineHeight: 1.6, color: "#374151", marginTop: 8 }}><strong>Aplicación.</strong> Las Partes declaran que los presentes Términos y Condiciones únicamente aplicarán y surtirán efectos sobre la marca denominada comercialmente "{nombreComercial}".</p>
+            <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>Resumen de Condiciones:</div>
+              <ul style={{ fontSize: 11, color: "#374151", paddingLeft: 18, margin: 0 }}><li>Tipo: {cond.tipoContrato}</li><li>Vigencia: {cond.vigencia}</li><li>Delivery: {cond.tipoDelivery}</li></ul>
+            </div>
+          </div>
+        </div>
+      );
+
+      default: return null;
+    }
+  };
+
+  // ═══════ PANEL POST-WIZARD ═══════
+  const renderPanel = () => {
+    const updateSD = (id, field, value) => setStoreData(p => ({ ...p, [id]: { ...p[id], [field]: value } }));
+
+    return (
+      <div>
+        {/* Tabs */}
+        <div style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", marginBottom: 24, flexWrap: "wrap" }}>
+          {stores.map(s => {
+            const sd = storeData[s.id];
+            const done = sd && sd.selectedBank !== null && sd.horariosOk && sd.menuOk;
+            return (
+              <button key={s.id} onClick={() => { setActiveTab(s.id); setShowNewStore(false); }}
+                style={{ padding: "10px 18px", fontSize: 13, fontWeight: activeTab === s.id && !showNewStore ? 700 : 400, cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === s.id && !showNewStore ? "2px solid #2563eb" : "none", color: activeTab === s.id && !showNewStore ? "#2563eb" : "#6b7280", display: "flex", alignItems: "center", gap: 6 }}>
+                {s.nombre} {done && <CheckCircle color="#16a34a" size={16} />}
+              </button>
+            );
+          })}
+          <button onClick={() => setShowNewStore(true)}
+            style={{ padding: "8px 14px", fontSize: 12, cursor: "pointer", background: "none", border: "1px dashed #d1d5db", borderRadius: 20, color: "#6b7280", display: "flex", alignItems: "center", gap: 4, marginLeft: 8 }}>
+            <PlusIcon /> Nueva tienda
+          </button>
+        </div>
+
+        {/* New store form */}
+        {showNewStore && (
+          <NewStoreForm onCancel={() => setShowNewStore(false)} onSave={data => {
+            const newId = Math.max(...stores.map(s => s.id), 0) + 1;
+            setStores(p => [...p, { id: newId, nombre: data.nombre }]);
+            setStoreData(p => ({ ...p, [newId]: { selectedBank: null, horariosOk: false, menuOk: false } }));
+            setActiveTab(newId);
+            setShowNewStore(false);
+          }} />
+        )}
+
+        {/* Store panel */}
+        {!showNewStore && activeTab && storeData[activeTab] && (() => {
+          const store = stores.find(s => s.id === activeTab);
+          const sd = storeData[activeTab];
+          if (!store || !sd) return null;
+
+          return (
+            <div>
+              <h2 style={h2S}>Panel de Tienda: {store.nombre}</h2>
+              <p style={descS}>Completa la configuración específica para <strong>{store.nombre}</strong>.</p>
+
+              {/* Cuenta Bancaria Asignada */}
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: "white", marginTop: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                  <BankIcon />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>Cuenta Bancaria Asignada</div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>Selecciona la cuenta donde se depositarán las liquidaciones de esta tienda.</div>
+                  </div>
+                </div>
+                {bankAccounts.length > 0 ? (
+                  <div>
+                    <select value={sd.selectedBank !== null ? sd.selectedBank : ""} onChange={e => updateSD(activeTab, "selectedBank", parseInt(e.target.value))}
+                      style={{ width: "100%", maxWidth: 400, padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, background: "white", cursor: "pointer" }}>
+                      <option value="">Seleccionar cuenta...</option>
+                      {bankAccounts.map((a, i) => <option key={i} value={i}>{a.banco} - {a.tipoCuenta} · ...{a.numCuenta.slice(-4)}</option>)}
+                    </select>
+                    {sd.selectedBank !== null && (
+                      <div style={{ marginTop: 10, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <CheckCircle size={16} /><span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>Cuenta asignada: {bankAccounts[sd.selectedBank]?.banco} - {bankAccounts[sd.selectedBank]?.numCuenta}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : <p style={{ fontSize: 12, color: "#ef4444" }}>No hay cuentas registradas.</p>}
+              </div>
+
+              {/* Horarios + Menú */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+                <div style={{ border: sd.horariosOk ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: sd.horariosOk ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Horarios de atención</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Configura los días y horas de apertura de esta sucursal.</p>
+                  {!sd.horariosOk ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 13 }}>Pendiente</span>
+                      <button onClick={() => updateSD(activeTab, "horariosOk", true)} style={{ padding: "8px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Iniciar</button>
+                    </div>
+                  ) : <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} /><span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13 }}>Completado</span></div>}
+                </div>
+                <div style={{ border: sd.menuOk ? "2px solid #bbf7d0" : "1px solid #e5e7eb", borderRadius: 12, padding: 18, background: sd.menuOk ? "#f0fdf4" : "white" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Menú y gestión</h3>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Carga tus productos, configura precios y descripciones del catálogo.</p>
+                  {!sd.menuOk ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 13 }}>Pendiente</span>
+                      <button onClick={() => updateSD(activeTab, "menuOk", true)} style={{ padding: "8px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Iniciar</button>
+                    </div>
+                  ) : <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} /><span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13 }}>Completado</span></div>}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  };
+
+  // ═══════ LAYOUT ═══════
+  return (
+    <div style={{ fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif", background: "#f8f9fb", minHeight: "100vh", color: "#111" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 28px", borderBottom: "1px solid #e5e7eb", background: "white" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Proceso Comercial</h1>
+            <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 12 }}>Completado</span>
+            <span style={{ fontSize: 11, color: "#9ca3af" }}>v1.17.3</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Procesos Comerciales › Buscador › <strong style={{ color: "#374151" }}>Expansión de marca</strong></div>
+        </div>
+        <button style={{ padding: "8px 18px", border: "1px solid #ef4444", borderRadius: 20, background: "white", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px 40px" }}>
+        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: "12px 18px", margin: "16px 0", display: "flex", alignItems: "center", gap: 10 }}>
+          <PersonIcon /><div><div style={{ fontSize: 13, fontWeight: 600 }}>Razón social</div><div style={{ fontSize: 12, color: "#6b7280" }}>{razonSocial.nombre} | {razonSocial.nit} | {razonSocial.razon} | {razonSocial.email}</div></div>
+        </div>
+
+        {!wizardDone && (
+          <>
+            <div style={{ background: "white", borderRadius: "16px 16px 0 0", border: "1px solid #e5e7eb", borderBottom: "none" }}><Stepper current={step} completed={completed} /></div>
+            <div style={{ background: "white", borderRadius: "0 0 16px 16px", border: "1px solid #e5e7eb", borderTop: "none", padding: "24px 28px" }}>{renderStep()}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
+              <button onClick={goBack} disabled={step === 0} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, fontWeight: 600, cursor: step === 0 ? "default" : "pointer", color: step === 0 ? "#d1d5db" : "#2563eb" }}>Volver</button>
+              <button onClick={goNext} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{step === 4 ? "Cerrar" : "Siguiente"}</button>
+            </div>
+          </>
+        )}
+
+        {wizardDone && (
+          <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: "24px 28px" }}>{renderPanel()}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(ExpansionMarca));
+</script>
+</body>
+</html>
