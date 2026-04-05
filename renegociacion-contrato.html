@@ -179,8 +179,10 @@ function RenegociacionContrato() {
   // Step 3 - Razón Social
   const [rs, setRs] = useState({ tipoPersona: "Persona jurídica", regimenFiscal: "48 – Reponsable del Impuesto sobre las ventas – IVA", claseContribuyente: "Responsable de Iva", digitoVerif: "2", tipoDoc: "", numDoc: "900974451", razonSocial: "GLOBAL MARKET CONNECTION S.A.S.", repNombre: "FARID", repApellido: "CHAJARA", repTipoDoc: "Pasaporte", repNumDoc: "4115CH70619", repEmail: "Marketplusr.2016@gmail.com" });
 
-  // Step 4 - Cuenta Bancaria
-  const [bankAccount, setBankAccount] = useState({ titular: "GLOBAL MARKET CONNECTION SAS", tipoId: "NIT", numId: "9009744512", banco: "", tipoCuenta: "Cuenta de Ahorros", numCuenta: "0550116800032033", domicilio: "CL 29 5 100 AV FERROCARRIL LC 2", prefijo: "+57", telefono: "", email: "Marketplusr.2016@gmail.com", certUploaded: true });
+  // Step 4 - Cuentas Bancarias (múltiples)
+  const [bankAccounts, setBankAccounts] = useState([{ titular: "GLOBAL MARKET CONNECTION SAS", tipoId: "NIT", numId: "9009744512", banco: "Davivienda", tipoCuenta: "Cuenta de Ahorros", numCuenta: "0550116800032033", domicilio: "CL 29 5 100 AV FERROCARRIL LC 2", prefijo: "+57", telefono: "", email: "Marketplusr.2016@gmail.com", certUploaded: true }]);
+  const [showAddBankStep4, setShowAddBankStep4] = useState(false);
+  const [editingBankStep4, setEditingBankStep4] = useState(null);
 
   // Step 5 - Condiciones
   const [condiciones, setCondiciones] = useState({ tipoContrato: "No exclusivo", condEstandar: "Si", tipoDelivery: "Full Service", impuestos: "No", tiempoPrepOrden: "No", tiempoEsperaRT: "No", vigencia: "24 meses", requiereTablet: "No", comisionFueraTablet: "No", frecPagos: "Semanal", comisionPickup: "No", comisionPickUp: "0", inversionAds: "No" });
@@ -191,6 +193,10 @@ function RenegociacionContrato() {
   // Step 7 - Logo y Portada
   const [logoUploaded, setLogoUploaded] = useState(false);
   const [portadaUploaded, setPortadaUploaded] = useState(false);
+  // Nueva tienda en panel
+  const [showNewStoreForm, setShowNewStoreForm] = useState(false);
+  const [newStoreName, setNewStoreName] = useState("");
+  const [newStoreAddr, setNewStoreAddr] = useState("");
 
   // Step 8 - Horarios
   const defH = {}; DAYS.forEach(d => { defH[d] = { open: "12:00", close: "20:30" }; });
@@ -207,7 +213,7 @@ function RenegociacionContrato() {
   const initPanel = () => {
     const config = {};
     tiendas.forEach(t => {
-      config[t.id] = { bankAccounts: [{ ...bankAccount }], showBankForm: false, editingBank: null, hoursConfig: { ...hours }, menuOk: false, completed: { bank: true, horarios: false, menu: false } };
+      config[t.id] = { bankAccounts: [...bankAccounts], showBankForm: false, editingBank: null, hoursConfig: { ...hours }, menuOk: false, completed: { bank: true, horarios: false, menu: false } };
     });
     setStoreConfig(config);
     const firstActive = tiendas.find(t => t.activa);
@@ -237,17 +243,14 @@ function RenegociacionContrato() {
           <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 12 }}>Tiendas que serán afectadas por el cambio:</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {tiendas.map(t => (
-              <div key={t.id} style={{ display: "flex", alignItems: "center", padding: "14px 16px", border: t.activa ? "2px solid #bfdbfe" : "1px solid #fecaca", borderRadius: 10, background: t.activa ? "#eff6ff" : "#fef2f2", transition: "all .2s" }}>
-                <div onClick={() => toggleTienda(t.id)} style={{ cursor: "pointer", marginRight: 10 }}>
-                  <PowerIcon on={t.activa} />
-                </div>
+              <div key={t.id} style={{ display: "flex", alignItems: "center", padding: "14px 16px", border: "2px solid #bfdbfe", borderRadius: 10, background: "#eff6ff" }}>
                 <LocationIcon />
                 <div style={{ marginLeft: 10, flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: t.activa ? "#111" : "#9ca3af", textDecoration: t.activa ? "none" : "line-through" }}>{t.nombre} · Store ID: {t.storeId}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: "#111" }}>{t.nombre} · Store ID: {t.storeId}</div>
                   <div style={{ fontSize: 12, color: "#6b7280" }}>{t.direccion}</div>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12, background: t.activa ? "#dcfce7" : "#fee2e2", color: t.activa ? "#16a34a" : "#ef4444" }}>
-                  {t.activa ? "Activa" : "Desactivada"}
+                <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12, background: "#dcfce7", color: "#16a34a" }}>
+                  Activa
                 </div>
               </div>
             ))}
@@ -315,9 +318,45 @@ function RenegociacionContrato() {
       case 3: return (
         <div>
           <h2 style={h2Style}>Formulario de Cuenta Bancaria</h2>
-          <p style={descStyle}>Por favor, ingresa los siguientes datos para continuar con el proceso.</p>
-          <div style={{ marginTop: 16 }}>
-            <BankForm account={bankAccount} onSave={acc => { setBankAccount(acc); goNext(); }} onCancel={() => {}} />
+          <p style={descStyle}>Agrega una o más cuentas bancarias para este aliado. Podrás asignarlas a cada tienda en el panel posterior.</p>
+          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+            {bankAccounts.map((acc, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 10, background: "white" }}>
+                <BankIcon />
+                <div style={{ marginLeft: 10, flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{acc.banco || "Banco"} - {acc.tipoCuenta}</div>
+                  <div style={{ fontSize: 11, color: "#6b7280" }}>{acc.titular} · <code style={{ fontSize: 10, background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>{acc.numCuenta}</code></div>
+                  <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 600, marginTop: 2, display: "flex", alignItems: "center", gap: 3 }}><CheckCircle color="#16a34a" size={14} /> CERTIFICADO VALIDADO</div>
+                </div>
+                <button onClick={() => { setEditingBankStep4(i); setShowAddBankStep4(true); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><EditIcon /></button>
+                <button onClick={() => setBankAccounts(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><TrashIcon /></button>
+              </div>
+            ))}
+          </div>
+          {showAddBankStep4 ? (
+            <div style={{ marginTop: 16 }}>
+              <BankForm
+                account={editingBankStep4 !== null ? bankAccounts[editingBankStep4] : null}
+                onSave={acc => {
+                  if (editingBankStep4 !== null) {
+                    setBankAccounts(p => p.map((x, i) => i === editingBankStep4 ? acc : x));
+                  } else {
+                    setBankAccounts(p => [...p, acc]);
+                  }
+                  setShowAddBankStep4(false);
+                  setEditingBankStep4(null);
+                }}
+                onCancel={() => { setShowAddBankStep4(false); setEditingBankStep4(null); }}
+              />
+            </div>
+          ) : (
+            <button onClick={() => { setEditingBankStep4(null); setShowAddBankStep4(true); }} style={{ marginTop: 14, padding: "9px 18px", border: "1px dashed #d1d5db", borderRadius: 20, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#2563eb", display: "flex", alignItems: "center", gap: 6 }}>
+              <PlusIcon /> Agregar cuenta bancaria
+            </button>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
+            <button onClick={goBack} style={{ padding: "10px 24px", border: "1px solid #e5e7eb", borderRadius: 24, background: "white", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#2563eb" }}>Volver</button>
+            <button onClick={goNext} style={{ padding: "10px 24px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Siguiente</button>
           </div>
         </div>
       );
@@ -372,13 +411,33 @@ function RenegociacionContrato() {
 
   // ═══════ PANEL POST-WIZARD ═══════
   const renderPanel = () => {
-    const activeTiendas = tiendas.filter(t => t.activa);
-    const inactiveTiendas = tiendas.filter(t => !t.activa);
-
     return (
       <div>
         <h2 style={h2Style}>Gestión de Tiendas — {nuevoNombre}</h2>
         <p style={descStyle}>Administra las tiendas activas de la marca. Puedes desactivar, editar configuraciones o reactivar tiendas.</p>
+
+        {/* Logo y Portada — aplica para toda la marca */}
+        <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: "white", marginTop: 20, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 16 }}>🖼️</span>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Imagen de marca</div>
+          </div>
+          <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>Estas imágenes aplican para <strong>todas las tiendas</strong> de <strong>{nuevoNombre}</strong>.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div onClick={() => setLogoUploaded(p => !p)} style={{ border: logoUploaded ? "1.5px solid #86efac" : "2px dashed #d1d5db", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: logoUploaded ? "#f0fdf4" : "#fafafa", transition: "all .2s" }}>
+              <ImagePlaceholder />
+              <div style={{ fontWeight: 600, fontSize: 13, color: "#374151", marginTop: 8 }}>Logo de la marca</div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>400 × 400 px · PNG o JPG</div>
+              {logoUploaded && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, color: "#16a34a", fontSize: 12, fontWeight: 600, marginTop: 8 }}><CheckCircle size={14} /> Cargado correctamente</div>}
+            </div>
+            <div onClick={() => setPortadaUploaded(p => !p)} style={{ border: portadaUploaded ? "1.5px solid #86efac" : "2px dashed #d1d5db", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: portadaUploaded ? "#f0fdf4" : "#fafafa", transition: "all .2s" }}>
+              <ImagePlaceholder />
+              <div style={{ fontWeight: 600, fontSize: 13, color: "#374151", marginTop: 8 }}>Portada</div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>1200 × 400 px · PNG o JPG</div>
+              {portadaUploaded && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, color: "#16a34a", fontSize: 12, fontWeight: 600, marginTop: 8 }}><CheckCircle size={14} /> Cargado correctamente</div>}
+            </div>
+          </div>
+        </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #e5e7eb", marginTop: 20, marginBottom: 20, gap: 0, flexWrap: "wrap" }}>
@@ -386,14 +445,49 @@ function RenegociacionContrato() {
             const sc = storeConfig[t.id];
             const done = sc && sc.completed.bank && sc.completed.horarios && sc.completed.menu;
             return (
-              <button key={t.id} onClick={() => { setActiveTab(t.id); setEditingStore(null); }}
+              <button key={t.id} onClick={() => { setActiveTab(t.id); setEditingStore(null); setShowNewStoreForm(false); }}
                 style={{ padding: "10px 16px", fontSize: 13, fontWeight: activeTab === t.id ? 700 : 400, cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === t.id ? "2px solid #2563eb" : "none", color: !t.activa ? "#d1d5db" : activeTab === t.id ? "#2563eb" : "#6b7280", display: "flex", alignItems: "center", gap: 6, textDecoration: !t.activa ? "line-through" : "none" }}>
                 <PowerIcon on={t.activa} /> {t.nombre}
                 {done && t.activa && <CheckCircle color="#16a34a" size={16} />}
               </button>
             );
           })}
+          <button onClick={() => { setShowNewStoreForm(true); setActiveTab(null); }} style={{ marginLeft: 6, padding: "8px 14px", border: "1px dashed #d1d5db", borderRadius: 8, background: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#6b7280", display: "flex", alignItems: "center", gap: 5 }}>
+            <PlusIcon /> Nueva tienda
+          </button>
         </div>
+
+        {/* Nueva tienda form */}
+        {showNewStoreForm && (
+          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 24, background: "white", marginBottom: 20, position: "relative" }}>
+            <button onClick={() => setShowNewStoreForm(false)} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer" }}><CloseIcon /></button>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 18 }}>Agregar nueva tienda</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 12 }}>
+                <Field label="Nombre de la tienda" value={newStoreName} onChange={setNewStoreName} placeholder="Ej. Délice Del Mundo Norte" />
+                <Field label="Tipo de comida" value="" onChange={() => {}} dropdown={["Comida rápida", "Comida saludable", "Postres", "Hamburguesas"]} />
+              </div>
+              <Field label="Dirección" value={newStoreAddr} onChange={setNewStoreAddr} placeholder="Calle, número, ciudad, departamento" />
+              <div style={{ display: "flex", gap: 12 }}>
+                <Field label="Prefijo + Teléfono" value="" onChange={() => {}} placeholder="+57 300 000 0000" half />
+                <Field label="Email" value="" onChange={() => {}} placeholder="tienda@marca.com" half />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+              <button onClick={() => { setShowNewStoreForm(false); setNewStoreName(""); setNewStoreAddr(""); }} style={{ padding: "10px 20px", background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#374151" }}>Cancelar</button>
+              <button onClick={() => {
+                if (!newStoreName.trim()) return;
+                const newId = Date.now();
+                const defHours = {}; DAYS.forEach(d => { defHours[d] = { open: "12:00", close: "20:30" }; });
+                setTiendas(p => [...p, { id: newId, nombre: newStoreName, storeId: String(Math.floor(Math.random()*900000000+100000000)), direccion: newStoreAddr || "Dirección pendiente", activa: true }]);
+                setStoreConfig(p => ({ ...p, [newId]: { bankAccounts: [...bankAccounts], showBankForm: false, editingBank: null, hoursConfig: defHours, menuOk: false, completed: { bank: true, horarios: false, menu: false } } }));
+                setActiveTab(newId);
+                setShowNewStoreForm(false);
+                setNewStoreName(""); setNewStoreAddr("");
+              }} style={{ padding: "10px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><CheckCircle color="white" size={18} /> Agregar tienda</button>
+            </div>
+          </div>
+        )}
 
         {/* Store panel */}
         {activeTab && (() => {
