@@ -43,6 +43,91 @@ const MapPlaceholder = () => (
   </div>
 );
 
+
+// ── POLYGON TABLE COMPONENT ──
+const COUNTRY_RANGES_POLY = {
+  CO:{min:1000,max:30000,sym:"COP",name:"Colombia"},
+  CL:{min:500,max:10000,sym:"CLP",name:"Chile"},
+  BR:{min:1,max:100,sym:"BRL",name:"Brasil"},
+  AR:{min:30,max:5000,sym:"ARS",name:"Argentina"},
+  MX:{min:7,max:300,sym:"MXN",name:"Mexico"},
+  PE:{min:1,max:50,sym:"PEN",name:"Peru"},
+  UY:{min:20,max:200,sym:"UYU",name:"Uruguay"},
+  CR:{min:600,max:3000,sym:"CRC",name:"Costa Rica"},
+  EC:{min:1,max:20,sym:"USD",name:"Ecuador"},
+};
+const MAX_KM_POLY = 12;
+const MAX_POLYS = 10;
+function mkPoly(id){return{id,name:"Poligono "+id,distance:"",price:""}}
+
+function PolygonTable({country}){
+  const [rows,setRows]=React.useState([mkPoly(1),mkPoly(2),mkPoly(3)]);
+  const [errs,setErrs]=React.useState({});
+  const range=COUNTRY_RANGES_POLY[country]||COUNTRY_RANGES_POLY.CO;
+  function chg(id,f,v){
+    if(f==="price"&&v.includes(","))return;
+    setRows(p=>p.map(r=>r.id===id?{...r,[f]:v}:r));
+    let e=null;
+    if(f==="distance"){const n=parseFloat(v);if(v!==""&&(isNaN(n)||n<0))e="Valor invalido";else if(!isNaN(n)&&n>MAX_KM_POLY)e="Maximo "+MAX_KM_POLY+" km";}
+    else{if(/,/.test(v))e="Use punto (.) como decimal";else{const n=parseFloat(v);if(v!==""&&!isNaN(n)&&(n<range.min||n>range.max))e=range.name+": entre "+range.min.toLocaleString()+" y "+range.max.toLocaleString();}}
+    setErrs(p=>{const k=id+"-"+f;if(e)return{...p,[k]:e};const nx={...p};delete nx[k];return nx;});
+  }
+  function del(id){setRows(p=>p.filter(r=>r.id!==id));setErrs(p=>{const nx={...p};delete nx[id+"-distance"];delete nx[id+"-price"];return nx;});}
+  const hasErr=Object.keys(errs).length>0;
+  const filled=rows.every(r=>r.distance!==""&&r.price!=="");
+  const allOk=!hasErr&&filled&&rows.length>0;
+  const iStyle={width:"100%",padding:"5px 8px",borderRadius:6,fontSize:12,outline:"none"};
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:10,flexWrap:"wrap"}},
+      React.createElement("span",{style:{fontSize:12,color:"#6b7280"}},
+        "Pais: ",React.createElement("strong",{style:{color:"#111"}},range.name)
+      ),
+      React.createElement("span",{style:{fontSize:11,background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe",borderRadius:20,padding:"3px 10px",fontWeight:600}},
+        "Rango: "+range.sym+" "+range.min.toLocaleString()+" - "+range.max.toLocaleString()
+      )
+    ),
+    React.createElement("div",{style:{background:"#f8f9fb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6b7280",marginBottom:12,lineHeight:1.5}},
+      "Max. ",React.createElement("strong",null,MAX_KM_POLY+" km")," por poligono",
+      " · Use ",React.createElement("strong",null,"."),` como decimal (ej: 1.5) · Precios dentro del rango del pais`
+    ),
+    React.createElement("div",{style:{border:"1px solid #e5e7eb",borderRadius:10,overflow:"hidden",marginBottom:10}},
+      React.createElement("table",{style:{width:"100%",borderCollapse:"collapse"}},
+        React.createElement("thead",null,React.createElement("tr",{style:{background:"#f9fafb"}},
+          ["#","Poligono","Distancia (km)","Precio ("+range.sym+")",""].map((h,i)=>
+            React.createElement("th",{key:i,style:{padding:"8px 12px",fontSize:10,fontWeight:700,color:"#6b7280",textAlign:"left",borderBottom:"1px solid #e5e7eb",textTransform:"uppercase",width:i===0?32:i===4?38:i===2?160:i===3?190:"auto"}},h)
+          )
+        )),
+        React.createElement("tbody",null,rows.map(row=>{
+          const dE=errs[row.id+"-distance"],pE=errs[row.id+"-price"];
+          return React.createElement("tr",{key:row.id,style:{borderBottom:"1px solid #f3f4f6"}},
+            React.createElement("td",{style:{padding:"7px 12px",fontSize:11,color:"#9ca3af",fontWeight:600}},row.id),
+            React.createElement("td",{style:{padding:"7px 12px",fontSize:12,color:"#374151",fontWeight:500}},row.name),
+            React.createElement("td",{style:{padding:"7px 12px"}},
+              React.createElement("input",{type:"number",step:"0.1",min:"0",max:MAX_KM_POLY,value:row.distance,placeholder:"0.0",onChange:e=>chg(row.id,"distance",e.target.value),style:{...iStyle,border:"1px solid "+(dE?"#ef4444":row.distance?"#86efac":"#e5e7eb"),background:dE?"#fef2f2":row.distance?"#f0fdf4":"white"}}),
+              dE&&React.createElement("div",{style:{fontSize:10,color:"#ef4444",marginTop:2}},"! "+dE)
+            ),
+            React.createElement("td",{style:{padding:"7px 12px"}},
+              React.createElement("input",{type:"text",inputMode:"decimal",value:row.price,placeholder:"0.00",onChange:e=>chg(row.id,"price",e.target.value),style:{...iStyle,border:"1px solid "+(pE?"#ef4444":row.price?"#86efac":"#e5e7eb"),background:pE?"#fef2f2":row.price?"#f0fdf4":"white"}}),
+              pE&&React.createElement("div",{style:{fontSize:10,color:"#ef4444",marginTop:2}},"! "+pE)
+            ),
+            React.createElement("td",{style:{padding:"7px 12px",textAlign:"center"}},
+              React.createElement("button",{onClick:()=>del(row.id),style:{width:24,height:24,border:"1px solid #fecdca",background:"#fff5f5",borderRadius:5,color:"#ef4444",fontSize:14,cursor:"pointer",lineHeight:1}},"×")
+            )
+          );
+        }))
+      )
+    ),
+    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}},
+      React.createElement("button",{onClick:()=>{if(rows.length>=MAX_POLYS)return;const id=rows.length?Math.max(...rows.map(r=>r.id))+1:1;setRows(p=>[...p,mkPoly(id)]);},disabled:rows.length>=MAX_POLYS,style:{padding:"7px 14px",border:"1px dashed #d1d5db",borderRadius:20,background:"white",fontSize:12,color:rows.length>=MAX_POLYS?"#d1d5db":"#6b7280",cursor:rows.length>=MAX_POLYS?"not-allowed":"pointer",fontWeight:500}},
+        "+ Agregar poligono ("+rows.length+"/"+MAX_POLYS+")"
+      ),
+      React.createElement("span",{style:{fontSize:11,fontWeight:600,padding:"5px 12px",borderRadius:20,background:allOk?"#dcfce7":hasErr?"#fef9c3":"#f3f4f6",color:allOk?"#16a34a":hasErr?"#b45309":"#6b7280",border:"1px solid "+(allOk?"#bbf7d0":hasErr?"#fde68a":"#e5e7eb")}},
+        allOk?"Valido":hasErr?"Corrige los errores":"Completa los campos"
+      )
+    )
+  );
+}
+
 // ── Stepper ──
 const STEPS = ["Nombre comercial", "Formulario de tienda básica", "Selección de Cuenta Bancaria", "Edición de Condiciones Contractuales", "Confirmación de Datos"];
 
@@ -351,6 +436,7 @@ function ExpansionMarca() {
             <div style={{ display: "flex", gap: 4, marginTop: 12, marginBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
               <button onClick={() => setCondTab("variables")} style={{ padding: "8px 16px", fontWeight: condTab === "variables" ? 700 : 400, fontSize: 14, background: "none", border: "none", borderBottom: condTab === "variables" ? "2px solid #2563eb" : "none", color: condTab === "variables" ? "#2563eb" : "#9ca3af", cursor: "pointer" }}>Variables</button>
               <button onClick={() => setCondTab("comision")} style={{ padding: "8px 16px", fontWeight: condTab === "comision" ? 700 : 400, fontSize: 14, background: "none", border: "none", borderBottom: condTab === "comision" ? "2px solid #2563eb" : "none", color: condTab === "comision" ? "#2563eb" : "#9ca3af", cursor: "pointer" }}>Comisión</button>
+              {cond.tipoDelivery === "Marketplace" && <span style={{ padding: "8px 14px", fontSize: 14, color: "#16a34a", fontWeight: 600 }}>📍 Poligonos</span>}
             </div>
             {condTab === "variables" && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 14px" }}>
@@ -501,6 +587,17 @@ function ExpansionMarca() {
                   ) : <div style={{ display: "flex", alignItems: "center", gap: 6 }}><CheckCircle size={18} /><span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13 }}>Completado</span></div>}
                 </div>
               </div>
+              {cond.tipoDelivery === "Marketplace" && (
+                <div style={{ marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 12, padding: 20, background: "white" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span>📍</span>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Detalle de Poligonos</h3>
+                    <span style={{ fontSize: 11, background: "#fff0eb", color: "#c4320a", border: "1px solid #f9c9b8", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }}>Marketplace</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 14 }}>Configura los poligonos de cobertura para esta tienda.</p>
+                  <PolygonTable country="CO" />
+                </div>
+              )}
             </div>
           );
         })()}
