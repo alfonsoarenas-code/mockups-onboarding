@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SOB — Proceso Inbound</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6fa; color: #1a1a2e; }
+
+  /* Sidebar */
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 200px; background: #fff; border-right: 1px solid #e8eaed; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-logo { background: #e63946; padding: 12px; display: flex; justify-content: center; }
+  .sidebar-logo svg { width: 36px; height: 36px; fill: white; }
+  .sidebar-user { padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+  .sidebar-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .sidebar-name { font-size: 13px; font-weight: 500; color: #333; }
+  .sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px; color: #555; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover { background: #f8f9fc; color: #333; }
+  .nav-item.active { color: #e63946; border-left-color: #e63946; background: #fff5f5; font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .sidebar-version { padding: 12px 16px; font-size: 11px; color: #aaa; border-top: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+  .flag { font-size: 18px; }
+
+  /* Main */
+  .main { margin-left: 200px; min-height: 100vh; }
+  .topbar { background: #fff; border-bottom: 1px solid #e8eaed; padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 12px; }
+  .version-badge { font-size: 10px; color: #999; font-weight: 400; }
+  .btn-primary { background: #e63946; color: white; border: none; border-radius: 6px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .btn-primary:hover { background: #c1121f; }
+
+  /* Table section */
+  .table-section { margin: 24px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .table-filters { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f2f5; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; cursor: pointer; border: none; background: none; }
+  .search-input { border: 1.5px solid #4361ee; border-radius: 6px; padding: 8px 14px; font-size: 13px; color: #333; outline: none; width: 260px; }
+  .search-input::placeholder { color: #bbb; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid #f0f2f5; }
+  th { padding: 10px 20px; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; white-space: nowrap; }
+  th .sort-arrow { display: inline-block; margin-left: 4px; opacity: 0.5; font-size: 10px; }
+  td { padding: 14px 20px; font-size: 13px; color: #333; border-bottom: 1px solid #f8f9fc; vertical-align: middle; }
+  tbody tr:hover { background: #fafbff; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .flag-icon { font-size: 20px; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-revision { background: #e8f4fd; color: #2b7dc8; }
+  .badge-error { background: #fdecea; color: #d32f2f; }
+  .badge-completado { background: #e8f5e9; color: #2e7d32; }
+  .badge-inbound { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: #e65100; border: 1px solid #ffb74d; font-weight: 700; letter-spacing: 0.03em; }
+  .badge-inbound::before { content: '🔒'; font-size: 10px; }
+  .badge-inbound-unlocked { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: #1b5e20; border: 1px solid #81c784; font-weight: 700; }
+  .badge-inbound-unlocked::before { content: '🔓'; font-size: 10px; }
+
+  .action-link { color: #4361ee; font-weight: 600; font-size: 13px; cursor: pointer; background: none; border: none; text-decoration: none; }
+  .action-link:hover { text-decoration: underline; }
+  .action-link.disabled { color: #bbb; cursor: not-allowed; pointer-events: none; }
+
+  .countdown { font-size: 11px; color: #e65100; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-block; }
+  .tooltip-wrap:hover .tooltip-box { display: block; }
+  .tooltip-box { display: none; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #222; color: #fff; font-size: 11px; padding: 6px 10px; border-radius: 6px; white-space: nowrap; z-index: 200; }
+  .tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #222; }
+
+  /* ========== MODAL OVERLAY ========== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300; display: flex; align-items: flex-start; justify-content: flex-end; }
+  .modal-panel { background: #fff; width: calc(100vw - 200px); height: 100vh; overflow-y: auto; animation: slideIn 0.25s ease; }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Wizard header */
+  .wizard-topbar { background: #fff; border-bottom: 1px solid #e8eaed; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .wizard-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .inbound-badge-title { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: #e65100; border: 1px solid #ffb74d; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .breadcrumb { font-size: 12px; color: #888; margin-top: 2px; }
+  .breadcrumb span { color: #4361ee; font-weight: 500; }
+  .close-btn { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; }
+  .close-btn:hover { background: #f5f5f5; }
+
+  /* Inbound info banner */
+  .inbound-banner { margin: 20px 28px; background: linear-gradient(135deg, #fff8e1, #fff3cd); border: 1px solid #ffc107; border-radius: 10px; padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
+  .inbound-banner-icon { font-size: 22px; flex-shrink: 0; }
+  .inbound-banner-title { font-size: 13px; font-weight: 700; color: #7c4a00; margin-bottom: 3px; }
+  .inbound-banner-text { font-size: 12px; color: #8a5c00; line-height: 1.5; }
+  .inbound-inherited-tag { display: inline-flex; align-items: center; gap: 4px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+
+  /* Stepper */
+  .stepper { padding: 20px 28px 0; }
+  .stepper-row { display: flex; align-items: center; gap: 0; }
+  .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .step-circle-wrap { display: flex; align-items: center; width: 100%; }
+  .step-line { flex: 1; height: 3px; }
+  .step-line.done { background: #4361ee; }
+  .step-line.pending { background: #e0e0e0; }
+  .step-line.first { flex: 0; }
+  .step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; transition: all 0.2s; cursor: pointer; }
+  .step-circle.done { background: #4361ee; color: white; }
+  .step-circle.active { background: #4361ee; color: white; box-shadow: 0 0 0 4px rgba(67,97,238,0.2); }
+  .step-circle.pending { background: #f0f0f0; color: #aaa; }
+  .step-circle.editable { border: 2px dashed #4361ee; background: #fff; color: #4361ee; }
+  .step-label { font-size: 10px; color: #888; text-align: center; margin-top: 6px; max-width: 90px; line-height: 1.3; }
+  .step-label.active { color: #4361ee; font-weight: 600; }
+
+  /* Wizard content */
+  .wizard-content { padding: 24px 28px; }
+  .step-heading { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+  .step-subheading { font-size: 13px; color: #888; margin-bottom: 20px; }
+
+  /* Form elements */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 11px; color: #888; font-weight: 500; }
+  .form-label.inherited { color: #2e7d32; }
+  .form-input { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #222; background: #fff; outline: none; transition: border 0.15s; }
+  .form-input:focus { border-color: #4361ee; }
+  .form-input.inherited { border-color: #81c784; background: #f1f8e9; color: #2e7d32; }
+  .form-select { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #222; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center; appearance: none; outline: none; cursor: pointer; }
+  .form-select.inherited { border-color: #81c784; background-color: #f1f8e9; color: #2e7d32; }
+  .inherited-note { font-size: 10px; color: #66bb6a; display: flex; align-items: center; gap: 3px; }
+
+  /* Map placeholder */
+  .map-placeholder { background: #e8eef7; border-radius: 10px; height: 160px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border: 1.5px solid #c5d3e8; }
+  .map-pin { font-size: 28px; }
+  .map-addr { font-size: 12px; color: #4361ee; font-weight: 500; }
+
+  /* Toggle */
+  .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #555; }
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; transition: 0.2s; cursor: pointer; }
+  .toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+  .toggle input:checked + .toggle-slider { background: #4361ee; }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+  /* Document upload */
+  .doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .doc-card { border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .doc-card.done { border-color: #81c784; background: #f1f8e9; }
+  .doc-card.editable { border-color: #4361ee; border-style: dashed; background: #f5f7ff; }
+  .doc-info { display: flex; align-items: center; gap: 10px; }
+  .doc-check { width: 22px; height: 22px; border-radius: 50%; background: #4caf50; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; flex-shrink: 0; }
+  .doc-check.pending { background: #ff9800; }
+  .doc-name { font-size: 13px; font-weight: 500; color: #333; }
+  .doc-sub { font-size: 11px; color: #888; }
+  .doc-actions { display: flex; gap: 6px; }
+  .doc-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #ddd; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+
+  /* Conditions grid */
+  .conditions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .cond-field { display: flex; flex-direction: column; gap: 4px; }
+  .cond-label { font-size: 10px; color: #888; font-weight: 500; }
+
+  /* Nav buttons */
+  .wizard-footer { padding: 16px 28px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; background: #fff; position: sticky; bottom: 0; }
+  .btn-back { background: none; border: 1.5px solid #ddd; border-radius: 8px; padding: 9px 20px; font-size: 13px; color: #555; cursor: pointer; font-weight: 500; }
+  .btn-back:hover { border-color: #bbb; }
+  .btn-next { background: #4361ee; color: white; border: none; border-radius: 8px; padding: 10px 26px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-next:hover { background: #3451d1; }
+  .btn-finish { background: #2e7d32; color: white; border: none; border-radius: 8px; padding: 10px 26px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* Step 6 confirmation */
+  .confirm-card { background: #f8f9fc; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .confirm-section-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .confirm-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .confirm-label { font-size: 12px; color: #888; min-width: 140px; }
+  .confirm-value { font-size: 13px; color: #222; font-weight: 500; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab.active { color: #4361ee; border-bottom-color: #4361ee; }
+
+  /* ========== POST-WIZARD PANEL ========== */
+  .panel-topbar { background: #fff; border-bottom: 1px solid #e8eaed; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .panel-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .panel-success-badge { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .panel-body { padding: 24px 28px; }
+  .panel-success-banner { background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border: 1px solid #81c784; border-radius: 12px; padding: 18px 22px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; }
+  .panel-success-icon { font-size: 36px; flex-shrink: 0; }
+  .panel-success-title { font-size: 16px; font-weight: 700; color: #1b5e20; margin-bottom: 3px; }
+  .panel-success-sub { font-size: 13px; color: #388e3c; }
+
+  /* Store panel tabs */
+  .store-tabs { display: flex; border-bottom: 2px solid #f0f0f0; margin-bottom: 24px; }
+  .store-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 6px; }
+  .store-tab.active { color: #4361ee; border-bottom-color: #4361ee; }
+
+  /* Config cards */
+  .config-section-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+  .config-cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+  .config-card { border: 1.5px solid #e8eaed; border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .config-card:hover { border-color: #4361ee; box-shadow: 0 2px 8px rgba(67,97,238,0.1); }
+  .config-card.completed { border-color: #81c784; background: #f9fff9; }
+  .config-card-left { display: flex; align-items: center; gap: 12px; }
+  .config-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .config-card-icon.blue { background: #e8f0fe; }
+  .config-card-icon.orange { background: #fff3e0; }
+  .config-card-icon.purple { background: #f3e5f5; }
+  .config-card-name { font-size: 14px; font-weight: 600; color: #222; }
+  .config-card-status { font-size: 11px; margin-top: 2px; }
+  .config-card-status.pending { color: #f57c00; }
+  .config-card-status.done { color: #2e7d32; }
+  .config-card-arrow { font-size: 16px; color: #ccc; }
+  .config-card.completed .config-card-arrow { color: #4caf50; }
+
+  /* Marca section */
+  .marca-section { background: #f8f9fc; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .marca-section-title { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .upload-area { border: 2px dashed #c5d3e8; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .upload-area:hover { border-color: #4361ee; background: #f5f7ff; }
+  .upload-icon { font-size: 28px; }
+  .upload-label { font-size: 13px; font-weight: 600; color: #4361ee; }
+  .upload-sub { font-size: 11px; color: #aaa; }
+  .upload-done { border: 2px solid #81c784; border-style: solid; background: #f1f8e9; }
+  .upload-done-check { width: 40px; height: 40px; background: #4caf50; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+  .upload-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+
+  /* Horario / Menu modals */
+  .inner-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; display: flex; align-items: center; justify-content: center; }
+  .inner-modal-box { background: #fff; border-radius: 16px; width: 560px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .inner-modal-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+  .inner-modal-title { font-size: 16px; font-weight: 700; }
+  .inner-modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: #aaa; }
+  .inner-modal-body { padding: 20px 24px; }
+  .inner-modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 10px; }
+  .btn-secondary { background: none; border: 1.5px solid #ddd; border-radius: 8px; padding: 8px 18px; font-size: 13px; cursor: pointer; }
+  .btn-save { background: #4361ee; color: white; border: none; border-radius: 8px; padding: 9px 22px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* Horario grid */
+  .horario-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+  .horario-day { width: 90px; font-size: 13px; font-weight: 500; color: #333; }
+  .horario-toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .horario-time { border: 1.5px solid #e0e0e0; border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 90px; }
+
+  /* Inherited section label */
+  .section-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0 16px; }
+  .section-divider-line { flex: 1; height: 1px; background: #f0f0f0; }
+  .section-divider-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .section-divider-badge { display: inline-flex; align-items: center; gap: 4px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+<script type="text/babel">
+const { useState } = React;
+
+// ─── Sample data ───────────────────────────────────────────────────────────
+const processes = [
+  { id: 1, country: '🇨🇴', proceso: 'Cambio de nombre de marca (Portal)', agente: 'galletasychesecakesbrajans@gmail.com', estado: 'revision', fecha: '4 - Abril - 2026 | 23:03', updated: '4 - Abril - 2026 | 23:03' },
+  { id: 2, country: '🇨🇴', proceso: 'Cambio de cuenta bancaria', agente: 'zulma.londono@rappi.com', estado: 'error', fecha: '26 - Febrero - 2026 | 16:35', updated: '4 - Abril - 2026 | 22:47' },
+  { id: 3, country: '🇨🇴', proceso: 'Nueva negociación', agente: 'mr.kevin27070@gmail.com', estado: 'inbound', fecha: '28 - Febrero - 2026 | 10:00', updated: '28 - Febrero - 2026 | 10:00', unlocksAt: '28 - Marzo - 2026', locked: false, progress: 3 },
+  { id: 4, country: '🇨🇴', proceso: 'Nueva negociación', agente: 'carlos.torres@gmail.com', estado: 'inbound_locked', fecha: '15 - Marzo - 2026 | 09:00', updated: '15 - Marzo - 2026 | 09:00', unlocksAt: '15 - Abril - 2026', locked: true, progress: 2 },
+  { id: 5, country: '🇨🇴', proceso: 'Cambio de nombre de marca (Portal)', agente: 'mr.kevin27070@gmail.com', estado: 'revision', fecha: '4 - Abril - 2026 | 16:45', updated: '4 - Abril - 2026 | 16:45' },
+  { id: 6, country: '🇨🇴', proceso: 'Cambio de cuenta bancaria (Portal)', agente: 'angelicavb@gmail.com', estado: 'revision', fecha: '4 - Abril - 2026 | 15:55', updated: '4 - Abril - 2026 | 15:55' },
+];
+
+// ─── Wizard data (pre-filled / inherited) ──────────────────────────────────
+const inheritedData = {
+  nombreComercial: 'Frutbry',
+  tipoDoc: 'NIT', nit: '41692602',
+  tipoComida: 'Saludable', prefijo: '+57', telefono: '3143592994',
+  email: 'gloriabrijaldo@gmail.com',
+  direccion: 'Avenida Calle 68 52, Bogotá, D.C., Colombia',
+  tipoPersona: 'Persona Natural',
+  regimenFiscal: '49 – No responsable de IVA',
+  claseContribuyente: 'Persona Natural No Responsable de IVA',
+  digitoVerificacion: '1',
+  razonSocial: 'GLORIA CECILIA SUAREZ',
+  nombreTitular: 'GLORIA CECILIA BRIJALDO SUAREZ',
+  tipoIdBanco: 'C.C.',
+  banco: 'BANCOLOMBIA',
+  tipoCuenta: 'Cuenta de Ahorros',
+  numeroCuenta: '17476431280',
+  domicilioFiscal: 'Avenida Calle 68 52, Bogotá, D.C., Colombia',
+  emailFacturacion: 'gloriabrijaldo@gmail.com',
+};
+
+const steps = [
+  'Nombre comercial',
+  'Formulario de tienda básica',
+  'Documentos',
+  'Formulario de Razón Social',
+  'Formulario de Cuenta Bancaria',
+  'Edición de Condiciones Contractuales',
+  'Confirmación de Datos',
+];
+
+// ─── Badge component ────────────────────────────────────────────────────────
+function Badge({ estado }) {
+  if (estado === 'revision') return <span className="badge badge-revision">● En revisión</span>;
+  if (estado === 'error') return <span className="badge badge-error">● Error</span>;
+  if (estado === 'completado') return <span className="badge badge-completado">● Completado</span>;
+  if (estado === 'inbound') return <span className="badge badge-inbound-unlocked">Inbound</span>;
+  if (estado === 'inbound_locked') return <span className="badge badge-inbound">Inbound</span>;
+  return null;
+}
+
+// ─── Wizard Steps ───────────────────────────────────────────────────────────
+function Step1({ data, setData }) {
+  return (
+    <div>
+      <div className="step-heading">Creación de nombre comercial</div>
+      <div className="step-subheading">
+        Ingresa el nombre comercial para la nueva marca.
+        <span className="inbound-inherited-tag">✔ Heredado</span>
+      </div>
+      <div className="section-divider">
+        <div className="section-divider-line"/>
+        <div className="section-divider-badge">✔ Datos pre-cargados del proceso anterior</div>
+        <div className="section-divider-line"/>
+      </div>
+      <div style={{maxWidth: 420}}>
+        <div className="form-group">
+          <label className="form-label inherited">Nombre comercial</label>
+          <input className="form-input inherited" value={data.nombreComercial} onChange={e=>setData({...data, nombreComercial: e.target.value})}/>
+          <div className="inherited-note">✔ Valor heredado — editable</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Step2({ data, setData }) {
+  return (
+    <div>
+      <div className="step-heading">Formulario de tienda básica</div>
+      <div className="step-subheading">Revisa y ajusta los datos de la tienda. Los campos en verde fueron pre-cargados.</div>
+      <div className="section-divider">
+        <div className="section-divider-line"/>
+        <div className="section-divider-badge">✔ Datos pre-cargados del proceso anterior</div>
+        <div className="section-divider-line"/>
+      </div>
+      <div className="form-grid" style={{marginBottom:14}}>
+        <div className="form-group">
+          <label className="form-label inherited">Tipo de documento</label>
+          <select className="form-select inherited" value={data.tipoDoc} onChange={e=>setData({...data, tipoDoc:e.target.value})}>
+            <option>NIT</option><option>CC</option><option>CE</option>
+          </select>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label inherited">Dirección</label>
+          <input className="form-input inherited" value={data.direccion} onChange={e=>setData({...data, direccion:e.target.value})}/>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label inherited">NIT</label>
+          <input className="form-input inherited" value={data.nit} onChange={e=>setData({...data, nit:e.target.value})}/>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+        <div className="map-placeholder">
+          <div className="map-pin">📍</div>
+          <div className="map-addr">{data.direccion}</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label inherited">Tipo de comida</label>
+          <select className="form-select inherited" value={data.tipoComida} onChange={e=>setData({...data, tipoComida:e.target.value})}>
+            <option>Saludable</option><option>Italiana</option><option>Comida Rápida</option>
+          </select>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label inherited">Correo electrónico</label>
+          <input className="form-input inherited" value={data.email} onChange={e=>setData({...data, email:e.target.value})}/>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+        <div className="form-group">
+          <label className="form-label inherited">Prefijo + Teléfono</label>
+          <div style={{display:'flex', gap:8}}>
+            <select className="form-select inherited" style={{width:90}} value={data.prefijo} onChange={e=>setData({...data, prefijo:e.target.value})}>
+              <option>+57</option><option>+52</option><option>+55</option>
+            </select>
+            <input className="form-input inherited" style={{flex:1}} value={data.telefono} onChange={e=>setData({...data, telefono:e.target.value})}/>
+          </div>
+          <div className="inherited-note">✔ Heredado</div>
+        </div>
+      </div>
+      <div style={{display:'flex', gap:20, marginTop:10}}>
+        <label className="toggle-row">
+          <span className="toggle"><input type="checkbox"/><span className="toggle-slider"/></span>
+          Es cocina oculta
+        </label>
+        <label className="toggle-row">
+          <span className="toggle"><input type="checkbox"/><span className="toggle-slider"/></span>
+          Se encuentra en centro comercial
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function Step3() {
+  return (
+    <div>
+      <div className="step-heading">Documentos</div>
+      <div className="step-subheading">Selecciona el tipo de persona y verifica los documentos cargados. Puedes reemplazarlos si es necesario.</div>
+      <div className="section-divider">
+        <div className="section-divider-line"/>
+        <div className="section-divider-badge">✔ Documentos heredados — reemplazables</div>
+        <div className="section-divider-line"/>
+      </div>
+      <div className="form-group" style={{maxWidth:240, marginBottom:20}}>
+        <label className="form-label">Tipo de persona</label>
+        <select className="form-select inherited" defaultValue="Persona Natural">
+          <option>Persona Natural</option><option>Persona Jurídica</option>
+        </select>
+      </div>
+      <div className="doc-grid">
+        {[
+          {name:'Certificado Bancario', sub:'BANK_ACCOUNT', done:true},
+          {name:'RUT', sub:'BUSINESS_ID_DOCUMENT', done:true},
+          {name:'Frente del documento', sub:'LEGAL_AGENT_DOCUMENT_FRONT', done:true},
+          {name:'Reverso del documento', sub:'LEGAL_AGENT_DOCUMENT_BACK', done:true},
+        ].map((doc,i)=>(
+          <div key={i} className={`doc-card ${doc.done?'done':''}`}>
+            <div className="doc-info">
+              <div className="doc-check">{doc.done?'✓':'!'}</div>
+              <div>
+                <div className="doc-name">{doc.name}</div>
+                <div className="doc-sub">{doc.sub}</div>
+                {doc.done && <div style={{fontSize:10, color:'#66bb6a', marginTop:2}}>✔ Heredado del proceso anterior</div>}
+              </div>
+            </div>
+            <div className="doc-actions">
+              <button className="doc-btn" title="Reemplazar">📤</button>
+              <button className="doc-btn" title="Eliminar">✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Step4({ data, setData }) {
+  return (
+    <div>
+      <div className="step-heading">Formulario de Razón Social</div>
+      <div className="step-subheading">Verifica y ajusta los datos fiscales. Todos los valores fueron pre-cargados.</div>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:20}}>
+        <div>
+          <div style={{fontWeight:700, marginBottom:14, fontSize:14}}>Restaurante</div>
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            {[
+              {label:'Tipo de persona', key:'tipoPersona', type:'select', opts:['Persona Natural','Persona Jurídica']},
+              {label:'Régimen fiscal', key:'regimenFiscal', type:'select', opts:['49 – No responsable de IVA','Régimen común']},
+              {label:'Clase de contribuyente', key:'claseContribuyente', type:'select', opts:['Persona Natural No Responsable de Iva']},
+              {label:'Dígito de verificación', key:'digitoVerificacion', type:'input'},
+              {label:'Tipo de documento', key:'tipoDoc', type:'select', opts:['NIT','CC']},
+              {label:'Número del documento', key:'nit', type:'input'},
+              {label:'Razón Social', key:'razonSocial', type:'input'},
+            ].map(f=>(
+              <div key={f.key} className="form-group">
+                <label className="form-label inherited">{f.label}</label>
+                {f.type==='select'
+                  ? <select className="form-select inherited" value={data[f.key]||''} onChange={e=>setData({...data,[f.key]:e.target.value})}>
+                      {(f.opts||[]).map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  : <input className="form-input inherited" value={data[f.key]||''} onChange={e=>setData({...data,[f.key]:e.target.value})}/>
+                }
+                <div className="inherited-note">✔ Heredado</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{fontWeight:700, marginBottom:14, fontSize:14, color:'#444'}}>Vista previa — Certificado Bancario</div>
+          <div style={{background:'#f8f9fc', border:'1.5px solid #e0e0e0', borderRadius:10, padding:20, height:320, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:8}}>
+            <div style={{fontSize:32}}>📄</div>
+            <div style={{fontSize:13, color:'#4361ee', fontWeight:600}}>Certificado Bancario.pdf (1/5)</div>
+            <div style={{fontSize:11, color:'#aaa'}}>Heredado del proceso anterior</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BankAccountForm({ account, onChange, onCancel, onSave, isNew }) {
+  const fields = [
+    {label:'Nombre del titular de la cuenta', key:'nombreTitular', full:true},
+    {label:'Tipo de identificación', key:'tipoIdBanco', select:true, opts:['C.C.','NIT','CE']},
+    {label:'Identidad del titular', key:'nit'},
+    {label:'Seleccione un banco', key:'banco', select:true, opts:['BANCOLOMBIA','DAVIVIENDA','BBVA','BANCO DE BOGOTÁ']},
+    {label:'Tipo de cuenta', key:'tipoCuenta', select:true, opts:['Cuenta de Ahorros','Cuenta Corriente']},
+    {label:'Número de cuenta', key:'numeroCuenta'},
+    {label:'Domicilio fiscal', key:'domicilioFiscal', full:true},
+    {label:'Correo electrónico de facturación', key:'emailFacturacion', full:true},
+  ];
+  return (
+    <div style={{border:'1.5px solid #4361ee', borderRadius:12, padding:18, background:'#f5f7ff', marginBottom:14}}>
+      <div style={{fontSize:13, fontWeight:700, color:'#4361ee', marginBottom:14}}>
+        {isNew ? '+ Nueva cuenta bancaria' : '✏ Editar cuenta bancaria'}
+      </div>
+      <div className="form-grid" style={{marginBottom:12}}>
+        {fields.map(f=>(
+          <div key={f.key} className={`form-group${f.full?' full':''}`}>
+            <label className="form-label">{f.label}</label>
+            {f.select
+              ? <select className="form-select" value={account[f.key]||''} onChange={e=>onChange({...account,[f.key]:e.target.value})}>
+                  <option value="">Seleccionar...</option>
+                  {f.opts.map(o=><option key={o}>{o}</option>)}
+                </select>
+              : <input className="form-input" value={account[f.key]||''} onChange={e=>onChange({...account,[f.key]:e.target.value})} placeholder={f.label}/>
+            }
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:14}}>
+        <div style={{border:'1.5px dashed #c5d3e8', borderRadius:8, padding:'8px 14px', fontSize:12, color:'#888', flex:1, display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
+          <span>📎</span> Subir certificado bancario (obligatorio, máx. 30 días vigencia)
+        </div>
+      </div>
+      <div style={{display:'flex', gap:8, justifyContent:'flex-end'}}>
+        <button className="btn-back" style={{padding:'7px 16px', fontSize:12}} onClick={onCancel}>Cancelar</button>
+        <button className="btn-next" style={{padding:'7px 16px', fontSize:12}} onClick={onSave}>Guardar cuenta</button>
+      </div>
+    </div>
+  );
+}
+
+function Step5({ accounts, setAccounts }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [formData, setFormData] = useState({});
+
+  function startNew() {
+    setFormData({});
+    setEditingIdx(null);
+    setShowForm(true);
+  }
+  function startEdit(idx) {
+    setFormData({...accounts[idx]});
+    setEditingIdx(idx);
+    setShowForm(true);
+  }
+  function saveAccount() {
+    if (editingIdx !== null) {
+      const updated = [...accounts];
+      updated[editingIdx] = formData;
+      setAccounts(updated);
+    } else {
+      setAccounts([...accounts, formData]);
+    }
+    setShowForm(false);
+    setEditingIdx(null);
+    setFormData({});
+  }
+  function deleteAccount(idx) {
+    setAccounts(accounts.filter((_,i)=>i!==idx));
+  }
+
+  return (
+    <div>
+      <div className="step-heading">Cuentas Bancarias</div>
+      <div className="step-subheading">Revisa las cuentas del aliado. Puedes agregar nuevas, editar o eliminar. Las cuentas guardadas aquí estarán disponibles para asociar a la tienda al finalizar.</div>
+
+      <div style={{background:'#e8f5e9', border:'1px solid #81c784', borderRadius:8, padding:'10px 16px', marginBottom:20, fontSize:12, color:'#2e7d32', display:'flex', alignItems:'center', gap:8}}>
+        <span>🤖</span> Hemos pre-cargado la cuenta identificada en el certificado bancario del aliado
+      </div>
+
+      {/* Account cards */}
+      {accounts.map((acc, idx) => (
+        editingIdx === idx && showForm
+          ? <BankAccountForm key={idx} account={formData} onChange={setFormData} onCancel={()=>{setShowForm(false);setEditingIdx(null);}} onSave={saveAccount} isNew={false}/>
+          : (
+            <div key={idx} style={{border:'1.5px solid #81c784', borderRadius:12, padding:16, marginBottom:12, background:'#f9fff9', display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div style={{display:'flex', gap:14, alignItems:'flex-start'}}>
+                <div style={{width:40, height:40, borderRadius:10, background:'#e8f5e9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0}}>🏦</div>
+                <div>
+                  <div style={{fontSize:13, fontWeight:700, color:'#1a1a2e', marginBottom:2}}>{acc.nombreTitular || 'Sin nombre'}</div>
+                  <div style={{fontSize:12, color:'#555'}}>{acc.banco || '—'} · {acc.tipoCuenta || '—'}</div>
+                  <div style={{fontSize:12, color:'#888'}}>Cta: {acc.numeroCuenta || '—'} · ID: {acc.nit || '—'}</div>
+                  <div style={{fontSize:11, color:'#66bb6a', marginTop:4, display:'flex', alignItems:'center', gap:4}}>
+                    <span style={{background:'#e8f5e9', padding:'1px 7px', borderRadius:10, fontWeight:600}}>✓ Certificado validado</span>
+                    {idx===0 && <span style={{background:'#e8f0fe', color:'#4361ee', padding:'1px 7px', borderRadius:10, fontWeight:600}}>✔ Heredado</span>}
+                  </div>
+                </div>
+              </div>
+              <div style={{display:'flex', gap:6}}>
+                <button className="doc-btn" title="Editar" onClick={()=>startEdit(idx)}>✏️</button>
+                <button className="doc-btn" title="Eliminar" onClick={()=>deleteAccount(idx)} style={{color:'#e63946'}}>🗑</button>
+              </div>
+            </div>
+          )
+      ))}
+
+      {/* New account form */}
+      {showForm && editingIdx === null && (
+        <BankAccountForm account={formData} onChange={setFormData} onCancel={()=>setShowForm(false)} onSave={saveAccount} isNew={true}/>
+      )}
+
+      {/* Add button */}
+      {!showForm && (
+        <button onClick={startNew} style={{width:'100%', border:'1.5px dashed #4361ee', borderRadius:10, padding:'12px', background:'#f5f7ff', color:'#4361ee', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8}}>
+          + Agregar cuenta bancaria
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Step6() {
+  const [activeTab, setActiveTab] = useState('variables');
+  const variablesFields = [
+    {label:'Tipo de Contrato', value:'No exclusivo', changed:false},
+    {label:'Contrato con condiciones estándar?', value:'Sí', changed:false},
+    {label:'Tipo de Delivery', value:'Full Service', changed:false},
+    {label:'Incluye 1.5% para impuestos?', value:'Sí', changed:false},
+    {label:'Acepta Vouchers', value:'No', changed:true},
+    {label:'El fee de activación es cobrado?', value:'No', changed:false},
+    {label:'Tiempo de preparación de orden superior a (40) min', value:'Sí', changed:false},
+    {label:'Tiempo de espera de RT después de finalizado Cooking Time?', value:'Sí', changed:false},
+    {label:'Valor de la Multa', value:'1590', changed:false},
+    {label:'Minutos de espera para la multa', value:'10 (diez) minutos', changed:false},
+    {label:'Vigencia de Contrato', value:'12 meses', changed:true},
+    {label:'Requiere Tablet', value:'No', changed:false},
+    {label:'Cobra comisión por pedido fuera de la tablet?', value:'No', changed:false},
+    {label:'Frecuencia de Pagos', value:'Semanal nueva', changed:false},
+    {label:'Comisión estándar pickup', value:'No', changed:false},
+    {label:'Comisión Pick Up?', value:'0', changed:false},
+    {label:'Inversión de ADS', value:'No', changed:false},
+  ];
+  return (
+    <div>
+      <div className="step-heading">Edición de Condiciones Contractuales</div>
+      <div className="step-subheading">Modifica las condiciones según la nueva negociación. Los campos en verde fueron modificados respecto al contrato anterior.</div>
+      <div style={{background:'#fff8e1', border:'1px solid #ffc107', borderRadius:8, padding:'10px 16px', marginBottom:20, fontSize:12, color:'#7c4a00', display:'flex', gap:8}}>
+        <span>💡</span> Los campos resaltados en verde indican cambios respecto al contrato anterior del aliado.
+      </div>
+      <div className="tabs">
+        <div className={`tab ${activeTab==='variables'?'active':''}`} onClick={()=>setActiveTab('variables')}>Variables</div>
+        <div className={`tab ${activeTab==='comision'?'active':''}`} onClick={()=>setActiveTab('comision')}>Comisión</div>
+      </div>
+      {activeTab==='variables' && (
+        <div className="conditions-grid">
+          {variablesFields.map((f,i)=>(
+            <div key={i} className="cond-field">
+              <label className={`cond-label${f.changed?' inherited':''}`}>{f.label}</label>
+              <select className={`form-select${f.changed?' inherited':''}`} defaultValue={f.value}>
+                <option>{f.value}</option>
+              </select>
+              {f.changed && <div className="inherited-note" style={{color:'#e65100'}}>✏ Modificado</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      {activeTab==='comision' && (
+        <div className="conditions-grid">
+          {[
+            {label:'Comisión base Rappi', value:'20%'},
+            {label:'Comisión pickup', value:'15%'},
+            {label:'Comisión ADS', value:'0%'},
+            {label:'Descuento max voucher', value:'$50.000'},
+          ].map((f,i)=>(
+            <div key={i} className="cond-field">
+              <label className="cond-label">{f.label}</label>
+              <select className="form-select" defaultValue={f.value}><option>{f.value}</option></select>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Step7({ data }) {
+  return (
+    <div>
+      <div className="step-heading">Confirmación de Datos</div>
+      <div style={{background:'#e8f0fe', border:'1px solid #c5d3e8', borderRadius:10, padding:'12px 16px', marginBottom:20, fontSize:13, color:'#1a56a8', display:'flex', gap:10, alignItems:'flex-start'}}>
+        <span style={{fontSize:18}}>ℹ️</span>
+        <div><strong>¡Revisión del proceso!</strong><br/>Estás visualizando el resumen del proceso Inbound. Verifica toda la información antes de enviar.</div>
+      </div>
+      <div className="confirm-card">
+        <div className="confirm-section-title">Datos comerciales</div>
+        <div className="confirm-row"><span className="confirm-label">Nombre comercial</span><span className="confirm-value">{data.nombreComercial}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Tipo de documento</span><span className="confirm-value">{data.tipoDoc}</span></div>
+        <div className="confirm-row"><span className="confirm-label">NIT</span><span className="confirm-value">{data.nit}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Tipo de comida</span><span className="confirm-value">{data.tipoComida}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Email</span><span className="confirm-value">{data.email}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Dirección</span><span className="confirm-value">{data.direccion}</span></div>
+      </div>
+      <div className="confirm-card">
+        <div className="confirm-section-title">Razón Social</div>
+        <div className="confirm-row"><span className="confirm-label">Tipo de persona</span><span className="confirm-value">{data.tipoPersona}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Razón Social</span><span className="confirm-value">{data.razonSocial}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Régimen fiscal</span><span className="confirm-value">{data.regimenFiscal}</span></div>
+      </div>
+      <div className="confirm-card">
+        <div className="confirm-section-title">Cuenta Bancaria</div>
+        <div className="confirm-row"><span className="confirm-label">Titular</span><span className="confirm-value">{data.nombreTitular}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Banco</span><span className="confirm-value">{data.banco}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Tipo de cuenta</span><span className="confirm-value">{data.tipoCuenta}</span></div>
+        <div className="confirm-row"><span className="confirm-label">Número de cuenta</span><span className="confirm-value">{data.numeroCuenta}</span></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Horario Modal ─────────────────────────────────────────────────────────
+function HorarioModal({ onClose, onSave }) {
+  const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+  const [schedule, setSchedule] = useState(days.map(d=>({day:d, open:true, from:'08:00', to:'22:00'})));
+  function toggle(i) { setSchedule(s=>s.map((r,j)=>j===i?{...r,open:!r.open}:r)); }
+  function setTime(i,field,val) { setSchedule(s=>s.map((r,j)=>j===i?{...r,[field]:val}:r)); }
+  return (
+    <div className="inner-modal">
+      <div className="inner-modal-box">
+        <div className="inner-modal-header">
+          <div className="inner-modal-title">🕐 Horarios de atención</div>
+          <button className="inner-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="inner-modal-body">
+          <div style={{fontSize:12, color:'#888', marginBottom:14}}>Define los horarios de atención de la tienda para cada día de la semana.</div>
+          {schedule.map((row,i)=>(
+            <div key={i} className="horario-row">
+              <div className="horario-day">{row.day}</div>
+              <label className="toggle-row" style={{minWidth:80}}>
+                <span className="toggle">
+                  <input type="checkbox" checked={row.open} onChange={()=>toggle(i)}/>
+                  <span className="toggle-slider"/>
+                </span>
+                <span style={{fontSize:12, color: row.open?'#2e7d32':'#aaa'}}>{row.open?'Abierto':'Cerrado'}</span>
+              </label>
+              {row.open && <>
+                <input className="horario-time" type="time" value={row.from} onChange={e=>setTime(i,'from',e.target.value)}/>
+                <span style={{fontSize:12,color:'#aaa'}}>a</span>
+                <input className="horario-time" type="time" value={row.to} onChange={e=>setTime(i,'to',e.target.value)}/>
+              </>}
+            </div>
+          ))}
+        </div>
+        <div className="inner-modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+          <button className="btn-save" onClick={()=>{ onSave(); onClose(); }}>Guardar horarios</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Menu Modal ─────────────────────────────────────────────────────────────
+function MenuModal({ onClose, onSave }) {
+  return (
+    <div className="inner-modal">
+      <div className="inner-modal-box">
+        <div className="inner-modal-header">
+          <div className="inner-modal-title">🍽️ Menú y catálogo</div>
+          <button className="inner-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="inner-modal-body">
+          <div style={{fontSize:12, color:'#888', marginBottom:18}}>El catálogo del aliado se gestiona desde el portal. Indica la acción a tomar.</div>
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            {[
+              {icon:'📋', title:'Usar menú existente', sub:'Mantener el catálogo que el aliado ya tenía configurado'},
+              {icon:'🔄', title:'Migrar menú desde otro portal', sub:'Importar catálogo desde otra plataforma o archivo'},
+              {icon:'✨', title:'Crear menú nuevo', sub:'El aliado construirá su catálogo desde cero en el portal'},
+            ].map((opt,i)=>(
+              <label key={i} style={{display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'1.5px solid #e0e0e0', borderRadius:10, cursor:'pointer'}}>
+                <input type="radio" name="menu_opt" defaultChecked={i===0} style={{accentColor:'#4361ee'}}/>
+                <span style={{fontSize:22}}>{opt.icon}</span>
+                <div>
+                  <div style={{fontSize:13, fontWeight:600, color:'#222'}}>{opt.title}</div>
+                  <div style={{fontSize:11, color:'#888'}}>{opt.sub}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+          <div style={{marginTop:18, padding:'12px 16px', background:'#f5f7ff', borderRadius:8, fontSize:12, color:'#4361ee'}}>
+            💡 El aliado recibirá un email con acceso al portal para completar la gestión de su catálogo.
+          </div>
+        </div>
+        <div className="inner-modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+          <button className="btn-save" onClick={()=>{ onSave(); onClose(); }}>Confirmar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Post-Wizard Panel ─────────────────────────────────────────────────────
+function PostWizardPanel({ process, accounts, onClose }) {
+  const [logoUploaded, setLogoUploaded] = useState(false);
+  const [portadaUploaded, setPortadaUploaded] = useState(false);
+  const [horarioModal, setHorarioModal] = useState(false);
+  const [menuModal, setMenuModal] = useState(false);
+  const [horarioDone, setHorarioDone] = useState(false);
+  const [menuDone, setMenuDone] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(accounts.length > 0 ? 0 : null);
+
+  const allDone = logoUploaded && portadaUploaded && horarioDone && menuDone && selectedAccount !== null;
+
+  return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-panel">
+        {/* Header */}
+        <div className="panel-topbar">
+          <div>
+            <div className="panel-title">
+              Proceso Inbound
+              <span className="panel-success-badge">✓ Wizard completado</span>
+            </div>
+            <div className="breadcrumb">
+              Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound › Configuración de tienda</span>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+        </div>
+
+        <div className="panel-body">
+          {/* Success banner */}
+          <div className="panel-success-banner">
+            <div className="panel-success-icon">🎉</div>
+            <div>
+              <div className="panel-success-title">¡Proceso completado exitosamente!</div>
+              <div className="panel-success-sub">
+                El proceso Inbound para <strong>Frutbry</strong> ({process.agente}) fue procesado. Completa la configuración de la tienda para activar el aliado en la plataforma.
+              </div>
+            </div>
+          </div>
+
+          {/* Store tabs (single store, no + button) */}
+          <div className="store-tabs">
+            <div className="store-tab active">🏪 Frutbry — Tienda principal</div>
+          </div>
+
+          {/* ── Cuenta bancaria asociada ── */}
+          <div className="marca-section" style={{marginBottom:20}}>
+            <div className="marca-section-title">
+              🏦 Cuenta bancaria asociada
+              {selectedAccount !== null && <span style={{background:'#e8f5e9', color:'#2e7d32', fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:600, marginLeft:8}}>✓ Asignada</span>}
+            </div>
+            <div style={{fontSize:12, color:'#888', marginBottom:12}}>Selecciona cuál de las cuentas registradas en el wizard se asocia a esta tienda.</div>
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              {accounts.length === 0 && (
+                <div style={{fontSize:13, color:'#e63946', padding:'10px 14px', background:'#fff5f5', border:'1px solid #fcc', borderRadius:8}}>
+                  ⚠ No hay cuentas bancarias registradas. Vuelve al paso 5 del wizard para agregar una.
+                </div>
+              )}
+              {accounts.map((acc, idx) => (
+                <label key={idx} style={{display:'flex', alignItems:'center', gap:14, padding:'12px 16px', border:`1.5px solid ${selectedAccount===idx?'#4361ee':'#e0e0e0'}`, borderRadius:10, cursor:'pointer', background: selectedAccount===idx?'#f0f3ff':'#fff', transition:'all 0.15s'}}>
+                  <input type="radio" name="bank_account" checked={selectedAccount===idx} onChange={()=>setSelectedAccount(idx)} style={{accentColor:'#4361ee', width:16, height:16}}/>
+                  <div style={{width:36, height:36, borderRadius:8, background:'#e8f5e9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0}}>🏦</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13, fontWeight:600, color:'#1a1a2e'}}>{acc.nombreTitular || 'Sin nombre'}</div>
+                    <div style={{fontSize:12, color:'#555'}}>{acc.banco || '—'} · {acc.tipoCuenta || '—'} · Cta: {acc.numeroCuenta || '—'}</div>
+                  </div>
+                  {selectedAccount===idx && <span style={{fontSize:11, background:'#4361ee', color:'white', padding:'2px 8px', borderRadius:10, fontWeight:600}}>✓ Seleccionada</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="marca-section">
+            <div className="marca-section-title">
+              🖼️ Identidad de marca
+              {logoUploaded && portadaUploaded && <span style={{background:'#e8f5e9', color:'#2e7d32', fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:600}}>✓ Completado</span>}
+            </div>
+            <div className="upload-grid">
+              {/* Logo */}
+              <div>
+                <div style={{fontSize:11, color:'#888', fontWeight:600, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em'}}>Logo de marca <span style={{color:'#aaa', fontWeight:400}}>(400×400px)</span></div>
+                {!logoUploaded
+                  ? <div className="upload-area" onClick={()=>setLogoUploaded(true)}>
+                      <div className="upload-icon">🖼️</div>
+                      <div className="upload-label">Subir logo</div>
+                      <div className="upload-sub">PNG, JPG — máx. 5MB</div>
+                    </div>
+                  : <div className="upload-area upload-done" style={{flexDirection:'row', justifyContent:'center', gap:12}}>
+                      <div className="upload-done-check">✓</div>
+                      <div>
+                        <div style={{fontSize:13, fontWeight:600, color:'#2e7d32'}}>logo_frutbry.png</div>
+                        <div style={{fontSize:11, color:'#66bb6a'}}>400×400px — Cargado</div>
+                      </div>
+                    </div>
+                }
+              </div>
+              {/* Portada */}
+              <div>
+                <div style={{fontSize:11, color:'#888', fontWeight:600, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em'}}>Imagen de portada <span style={{color:'#aaa', fontWeight:400}}>(1200×400px)</span></div>
+                {!portadaUploaded
+                  ? <div className="upload-area" onClick={()=>setPortadaUploaded(true)}>
+                      <div className="upload-icon">🏞️</div>
+                      <div className="upload-label">Subir portada</div>
+                      <div className="upload-sub">PNG, JPG — máx. 10MB</div>
+                    </div>
+                  : <div className="upload-area upload-done" style={{flexDirection:'row', justifyContent:'center', gap:12}}>
+                      <div className="upload-done-check">✓</div>
+                      <div>
+                        <div style={{fontSize:13, fontWeight:600, color:'#2e7d32'}}>portada_frutbry.jpg</div>
+                        <div style={{fontSize:11, color:'#66bb6a'}}>1200×400px — Cargada</div>
+                      </div>
+                    </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          {/* ── Config cards: Horario & Menu ── */}
+          <div className="config-section-title">Configuración de tienda</div>
+          <div className="config-cards-row" style={{gridTemplateColumns:'1fr 1fr'}}>
+            {/* Horarios */}
+            <div className={`config-card ${horarioDone?'completed':''}`} onClick={()=>setHorarioModal(true)}>
+              <div className="config-card-left">
+                <div className="config-card-icon blue">🕐</div>
+                <div>
+                  <div className="config-card-name">Horarios de atención</div>
+                  <div className={`config-card-status ${horarioDone?'done':'pending'}`}>
+                    {horarioDone ? '✓ Completado' : '● Pendiente'}
+                  </div>
+                </div>
+              </div>
+              <div className="config-card-arrow">{horarioDone?'✓':'›'}</div>
+            </div>
+            {/* Menú */}
+            <div className={`config-card ${menuDone?'completed':''}`} onClick={()=>setMenuModal(true)}>
+              <div className="config-card-left">
+                <div className="config-card-icon orange">🍽️</div>
+                <div>
+                  <div className="config-card-name">Menú y catálogo</div>
+                  <div className={`config-card-status ${menuDone?'done':'pending'}`}>
+                    {menuDone ? '✓ Completado' : '● Pendiente'}
+                  </div>
+                </div>
+              </div>
+              <div className="config-card-arrow">{menuDone?'✓':'›'}</div>
+            </div>
+          </div>
+
+          {/* Final CTA */}
+          {allDone && (
+            <div style={{background:'linear-gradient(135deg, #e8f5e9, #f1f8e9)', border:'1px solid #81c784', borderRadius:12, padding:'18px 22px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <div style={{display:'flex', alignItems:'center', gap:12}}>
+                <span style={{fontSize:28}}>🚀</span>
+                <div>
+                  <div style={{fontSize:14, fontWeight:700, color:'#1b5e20'}}>Todo listo para activar</div>
+                  <div style={{fontSize:12, color:'#388e3c'}}>Frutbry completó todos los requisitos. Puedes activar el aliado en la plataforma.</div>
+                </div>
+              </div>
+              <button className="btn-finish" onClick={onClose}>Activar aliado →</button>
+            </div>
+          )}
+          {!allDone && (
+            <div style={{background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:12, padding:'14px 18px', fontSize:12, color:'#888', display:'flex', alignItems:'center', gap:8}}>
+              <span>⏳</span> Completa todos los pasos anteriores para poder activar el aliado en la plataforma.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sub-modals */}
+      {horarioModal && <HorarioModal onClose={()=>setHorarioModal(false)} onSave={()=>setHorarioDone(true)}/>}
+      {menuModal && <MenuModal onClose={()=>setMenuModal(false)} onSave={()=>setMenuDone(true)}/>}
+    </div>
+  );
+}
+
+// ─── Wizard Modal ──────────────────────────────────────────────────────────
+function InboundWizard({ process, onClose }) {
+  const [currentStep, setCurrentStep] = useState(process.progress || 1);
+  const [data, setData] = useState({...inheritedData});
+  const [accounts, setAccounts] = useState([{
+    nombreTitular: inheritedData.nombreTitular,
+    tipoIdBanco: inheritedData.tipoIdBanco,
+    nit: inheritedData.nit,
+    banco: inheritedData.banco,
+    tipoCuenta: inheritedData.tipoCuenta,
+    numeroCuenta: inheritedData.numeroCuenta,
+    domicilioFiscal: inheritedData.domicilioFiscal,
+    emailFacturacion: inheritedData.emailFacturacion,
+  }]);
+  const [finished, setFinished] = useState(false);
+
+  if (finished) {
+    return <PostWizardPanel process={process} accounts={accounts} onClose={onClose}/>;
+  }
+
+  function renderStep() {
+    switch(currentStep) {
+      case 1: return <Step1 data={data} setData={setData}/>;
+      case 2: return <Step2 data={data} setData={setData}/>;
+      case 3: return <Step3/>;
+      case 4: return <Step4 data={data} setData={setData}/>;
+      case 5: return <Step5 accounts={accounts} setAccounts={setAccounts}/>;
+      case 6: return <Step6/>;
+      case 7: return <Step7 data={data}/>;
+      default: return null;
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-panel">
+        {/* Header */}
+        <div className="wizard-topbar">
+          <div>
+            <div className="wizard-title">
+              Proceso Inbound
+              <span className="inbound-badge-title">🔓 Inbound</span>
+            </div>
+            <div className="breadcrumb">
+              Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound</span>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+        </div>
+
+        {/* Banner */}
+        <div className="inbound-banner">
+          <div className="inbound-banner-icon">⚡</div>
+          <div>
+            <div className="inbound-banner-title">Proceso Inbound — Información pre-cargada</div>
+            <div className="inbound-banner-text">
+              Este proceso retoma la información ingresada previamente por el aliado <strong>mr.kevin27070@gmail.com</strong>. Los campos en verde fueron heredados automáticamente y son editables. Avanza por cada paso para revisar y ajustar lo que sea necesario antes de completar el proceso.
+            </div>
+          </div>
+        </div>
+
+        {/* Stepper */}
+        <div className="stepper">
+          <div className="stepper-row">
+            {steps.map((s,i)=>{
+              const n = i+1;
+              const isDone = n < currentStep;
+              const isActive = n === currentStep;
+              return (
+                <div key={i} className="step-item">
+                  <div className="step-circle-wrap">
+                    {i>0 && <div className={`step-line ${n<=currentStep?'done':'pending'}`}/>}
+                    <div
+                      className={`step-circle ${isDone?'done':isActive?'active':'pending'}`}
+                      onClick={()=>{ if(n<=currentStep || n===currentStep+1) setCurrentStep(n); }}
+                    >
+                      {isDone ? '✓' : n}
+                    </div>
+                    {i<steps.length-1 && <div className={`step-line ${isDone?'done':'pending'}`}/>}
+                  </div>
+                  <div className={`step-label ${isActive?'active':''}`}>{s}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Step content */}
+        <div className="wizard-content">
+          {renderStep()}
+        </div>
+
+        {/* Footer */}
+        <div className="wizard-footer">
+          <button className="btn-back" onClick={()=>currentStep>1 && setCurrentStep(currentStep-1)} disabled={currentStep===1}>
+            Volver
+          </button>
+          {currentStep < 7
+            ? <button className="btn-next" onClick={()=>setCurrentStep(currentStep+1)}>Siguiente →</button>
+            : <button className="btn-finish" onClick={()=>setFinished(true)}>✓ Finalizar proceso</button>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ──────────────────────────────────────────────────────────────
+function App() {
+  const [openWizard, setOpenWizard] = useState(null);
+
+  function handleRevisar(proc) {
+    if (proc.estado === 'inbound') {
+      setOpenWizard(proc);
+    } else if (proc.estado === 'inbound_locked') {
+      alert(`⏳ Este proceso Inbound se desbloqueará el ${proc.unlocksAt}.\n\nEl proceso queda bloqueado durante 30 días desde la fecha de creación para permitir que el aliado intente completarlo por su cuenta antes de la intervención comercial.`);
+    } else {
+      alert('Abriendo proceso estándar...');
+    }
+  }
+
+  return (
+    <div>
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-logo">
+          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18"/><rect x="12" y="10" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="18" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="26" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/></svg>
+        </div>
+        <div className="sidebar-user">
+          <div className="sidebar-avatar">👤</div>
+          <div className="sidebar-name">alfonso.arenas</div>
+        </div>
+        <div className="sidebar-nav">
+          {[
+            {icon:'👥', label:'Usuarios'},
+            {icon:'✅', label:'Aprobaciones'},
+            {icon:'🏷️', label:'Brand Development'},
+            {icon:'📋', label:'Procesos Comerciales', active:true},
+            {icon:'📊', label:'Indicadores'},
+            {icon:'🔧', label:'Herramientas de soporte'},
+            {icon:'📢', label:'Campañas'},
+            {icon:'💳', label:'Pagos'},
+            {icon:'🕐', label:'Horarios'},
+            {icon:'📣', label:'Marketing Restaurantes'},
+            {icon:'🚪', label:'Cerrar sesión'},
+          ].map((item,i)=>(
+            <div key={i} className={`nav-item ${item.active?'active':''}`}>
+              <span>{item.icon}</span> {item.label}
+            </div>
+          ))}
+        </div>
+        <div className="sidebar-version">
+          <div style={{display:'flex', gap:6}}>
+            <span className="flag">🇪🇸</span>
+            <span className="flag">🇧🇷</span>
+          </div>
+          <span>v2.39.04</span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="main">
+        <div className="topbar">
+          <div className="page-title">
+            Procesos Comerciales
+            <span className="version-badge">v1.17.3</span>
+          </div>
+          <button className="btn-primary">+ Comenzar Proceso</button>
+        </div>
+
+        <div className="table-section">
+          <div className="table-filters">
+            <button className="filter-btn">⚙️ Filtrar</button>
+            <input className="search-input" placeholder="Email Agente" type="text"/>
+          </div>
+
+          {/* Inbound legend */}
+          <div style={{padding:'10px 20px', background:'#fffde7', borderBottom:'1px solid #fff9c4', fontSize:12, color:'#7c4a00', display:'flex', gap:16, alignItems:'center'}}>
+            <strong>💡 Proceso Inbound:</strong>
+            <span><span className="badge badge-inbound-unlocked" style={{marginRight:4}}>Inbound</span> = Disponible para revisar (pasaron +30 días)</span>
+            <span><span className="badge badge-inbound" style={{marginRight:4}}>Inbound</span> = Bloqueado (aún en plazo del aliado)</span>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>PAÍS <span className="sort-arrow">⇅</span></th>
+                <th>PROCESO COMERCIAL <span className="sort-arrow">⇅</span></th>
+                <th>AGENTE <span className="sort-arrow">⇅</span></th>
+                <th>ESTADO <span className="sort-arrow">⇅</span></th>
+                <th>FECHA DE CREACIÓN <span className="sort-arrow">⇅</span></th>
+                <th>FECHA DE ACTUALIZACIÓN <span className="sort-arrow">⇅</span></th>
+                <th>ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {processes.map(proc=>(
+                <tr key={proc.id}>
+                  <td><span className="flag-icon">{proc.country}</span></td>
+                  <td>
+                    {proc.proceso}
+                    {(proc.estado==='inbound'||proc.estado==='inbound_locked') && (
+                      <div style={{fontSize:11, color:'#888', marginTop:2}}>
+                        Progreso guardado hasta paso {proc.progress}
+                      </div>
+                    )}
+                  </td>
+                  <td>{proc.agente}</td>
+                  <td>
+                    <Badge estado={proc.estado}/>
+                    {proc.estado==='inbound_locked' && (
+                      <div className="countdown">🔒 Se desbloquea: {proc.unlocksAt}</div>
+                    )}
+                    {proc.estado==='inbound' && (
+                      <div className="countdown" style={{color:'#2e7d32'}}>✔ Disponible desde {proc.unlocksAt}</div>
+                    )}
+                  </td>
+                  <td>{proc.fecha}</td>
+                  <td>{proc.updated}</td>
+                  <td>
+                    {proc.estado==='inbound_locked'
+                      ? (
+                        <div className="tooltip-wrap">
+                          <button className="action-link disabled">Revisar</button>
+                          <div className="tooltip-box">Bloqueado hasta {proc.unlocksAt}</div>
+                        </div>
+                      )
+                      : (
+                        <button className="action-link" onClick={()=>handleRevisar(proc)}>
+                          Revisar
+                        </button>
+                      )
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Wizard Modal */}
+      {openWizard && (
+        <InboundWizard process={openWizard} onClose={()=>setOpenWizard(null)}/>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<div id="root"></div>
+</body>
+</html>
