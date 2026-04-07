@@ -791,17 +791,192 @@ function MenuModal({ onClose, onSave }) {
   );
 }
 
+// ─── Nueva Tienda Form (modal) ────────────────────────────────────────────
+function NuevaTiendaModal({ onClose, onSave }) {
+  const [form, setForm] = useState({ nombre:'', direccion:'', tipoComida:'', telefono:'', email:'' });
+  return (
+    <div className="inner-modal">
+      <div className="inner-modal-box" style={{width:520}}>
+        <div className="inner-modal-header">
+          <div className="inner-modal-title">🏪 Nueva sucursal</div>
+          <button className="inner-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="inner-modal-body">
+          <div style={{fontSize:12,color:'#888',marginBottom:16}}>Ingresa los datos básicos de la nueva sucursal. La cuenta bancaria, horarios y menú se configurarán en su pestaña.</div>
+          <div className="form-grid">
+            <div className="form-group full">
+              <label className="form-label">Nombre de la tienda</label>
+              <input className="form-input" placeholder="Ej: Frutbry Chapinero" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})}/>
+            </div>
+            <div className="form-group full">
+              <label className="form-label">Dirección</label>
+              <input className="form-input" placeholder="Dirección completa" value={form.direccion} onChange={e=>setForm({...form,direccion:e.target.value})}/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Tipo de comida</label>
+              <select className="form-select" value={form.tipoComida} onChange={e=>setForm({...form,tipoComida:e.target.value})}>
+                <option value="">Seleccionar...</option>
+                <option>Saludable</option><option>Italiana</option><option>Comida Rápida</option><option>Mexicana</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Teléfono</label>
+              <input className="form-input" placeholder="3001234567" value={form.telefono} onChange={e=>setForm({...form,telefono:e.target.value})}/>
+            </div>
+            <div className="form-group full">
+              <label className="form-label">Correo electrónico</label>
+              <input className="form-input" placeholder="tienda@ejemplo.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/>
+            </div>
+          </div>
+        </div>
+        <div className="inner-modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+          <button className="btn-save" onClick={()=>{ if(form.nombre.trim()) { onSave(form); onClose(); } }}>Agregar tienda</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Single Store Tab Content ──────────────────────────────────────────────
+function StoreTabContent({ store, storeIdx, accounts, updateStore }) {
+  const [horarioModal, setHorarioModal] = useState(false);
+  const [menuModal, setMenuModal]       = useState(false);
+
+  function setAccount(idx) { updateStore({ ...store, selectedAccount: idx }); }
+  function setHorarioDone()  { updateStore({ ...store, horarioDone: true }); }
+  function setMenuDone()     { updateStore({ ...store, menuDone: true }); }
+  function setLogo()         { updateStore({ ...store, logoUploaded: true }); }
+  function setPortada()      { updateStore({ ...store, portadaUploaded: true }); }
+
+  const isMain = storeIdx === 0;
+  const storeDone = store.selectedAccount !== null && store.horarioDone && store.menuDone
+    && (!isMain || (store.logoUploaded && store.portadaUploaded));
+
+  return (
+    <div>
+      {/* ── Marca (solo tienda principal) ── */}
+      {isMain && (
+        <div className="marca-section">
+          <div className="marca-section-title">
+            🖼️ Identidad de marca
+            {store.logoUploaded && store.portadaUploaded &&
+              <span style={{background:'#e8f5e9',color:'#2e7d32',fontSize:11,padding:'2px 8px',borderRadius:10,fontWeight:600,marginLeft:8}}>✓ Completado</span>}
+          </div>
+          <div className="upload-grid">
+            <div>
+              <div style={{fontSize:11,color:'#888',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Logo <span style={{color:'#aaa',fontWeight:400}}>(400×400px)</span></div>
+              {!store.logoUploaded
+                ? <div className="upload-area" onClick={setLogo}><div className="upload-icon">🖼️</div><div className="upload-label">Subir logo</div><div className="upload-sub">PNG, JPG — máx. 5MB</div></div>
+                : <div className="upload-area upload-done" style={{flexDirection:'row',justifyContent:'center',gap:12}}>
+                    <div className="upload-done-check">✓</div>
+                    <div><div style={{fontSize:13,fontWeight:600,color:'#2e7d32'}}>logo_frutbry.png</div><div style={{fontSize:11,color:'#66bb6a'}}>400×400px — Cargado</div></div>
+                  </div>
+              }
+            </div>
+            <div>
+              <div style={{fontSize:11,color:'#888',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Portada <span style={{color:'#aaa',fontWeight:400}}>(1200×400px)</span></div>
+              {!store.portadaUploaded
+                ? <div className="upload-area" onClick={setPortada}><div className="upload-icon">🏞️</div><div className="upload-label">Subir portada</div><div className="upload-sub">PNG, JPG — máx. 10MB</div></div>
+                : <div className="upload-area upload-done" style={{flexDirection:'row',justifyContent:'center',gap:12}}>
+                    <div className="upload-done-check">✓</div>
+                    <div><div style={{fontSize:13,fontWeight:600,color:'#2e7d32'}}>portada_frutbry.jpg</div><div style={{fontSize:11,color:'#66bb6a'}}>1200×400px — Cargada</div></div>
+                  </div>
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cuenta bancaria ── */}
+      <div className="marca-section" style={{marginBottom:16}}>
+        <div className="marca-section-title">
+          🏦 Cuenta bancaria asociada
+          {store.selectedAccount !== null &&
+            <span style={{background:'#e8f5e9',color:'#2e7d32',fontSize:11,padding:'2px 8px',borderRadius:10,fontWeight:600,marginLeft:8}}>✓ Asignada</span>}
+        </div>
+        <div style={{fontSize:12,color:'#888',marginBottom:12}}>Selecciona cuál cuenta se asocia a esta tienda.</div>
+        {accounts.length === 0
+          ? <div style={{fontSize:13,color:'#e63946',padding:'10px 14px',background:'#fff5f5',border:'1px solid #fcc',borderRadius:8}}>⚠ Sin cuentas. Agrega cuentas en el paso 5.</div>
+          : <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {accounts.map((acc,idx)=>(
+                <label key={idx} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 14px',border:`1.5px solid ${store.selectedAccount===idx?'#4361ee':'#e0e0e0'}`,borderRadius:10,cursor:'pointer',background:store.selectedAccount===idx?'#f0f3ff':'#fff',transition:'all 0.15s'}}>
+                  <input type="radio" name={`bank_${storeIdx}`} checked={store.selectedAccount===idx} onChange={()=>setAccount(idx)} style={{accentColor:'#4361ee',width:15,height:15}}/>
+                  <div style={{width:32,height:32,borderRadius:8,background:'#e8f5e9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🏦</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:600,color:'#1a1a2e'}}>{acc.nombreTitular||'Sin nombre'}</div>
+                    <div style={{fontSize:11,color:'#555'}}>{acc.banco||'—'} · {acc.tipoCuenta||'—'} · {acc.numeroCuenta||'—'}</div>
+                  </div>
+                  {store.selectedAccount===idx && <span style={{fontSize:11,background:'#4361ee',color:'white',padding:'2px 8px',borderRadius:10,fontWeight:600,flexShrink:0}}>✓</span>}
+                </label>
+              ))}
+            </div>
+        }
+      </div>
+
+      {/* ── Config cards ── */}
+      <div className="config-section-title">Configuración de tienda</div>
+      <div className="config-cards-row" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div className={`config-card ${store.horarioDone?'completed':''}`} onClick={()=>setHorarioModal(true)}>
+          <div className="config-card-left">
+            <div className="config-card-icon blue">🕐</div>
+            <div>
+              <div className="config-card-name">Horarios de atención</div>
+              <div className={`config-card-status ${store.horarioDone?'done':'pending'}`}>{store.horarioDone?'✓ Completado':'● Pendiente'}</div>
+            </div>
+          </div>
+          <div className="config-card-arrow">{store.horarioDone?'✓':'›'}</div>
+        </div>
+        <div className={`config-card ${store.menuDone?'completed':''}`} onClick={()=>setMenuModal(true)}>
+          <div className="config-card-left">
+            <div className="config-card-icon orange">🍽️</div>
+            <div>
+              <div className="config-card-name">Menú y catálogo</div>
+              <div className={`config-card-status ${store.menuDone?'done':'pending'}`}>{store.menuDone?'✓ Completado':'● Pendiente'}</div>
+            </div>
+          </div>
+          <div className="config-card-arrow">{store.menuDone?'✓':'›'}</div>
+        </div>
+      </div>
+
+      {/* Status bar for this store */}
+      <div style={{marginTop:8, padding:'10px 16px', background: storeDone?'#e8f5e9':'#f8f9fc', border:`1px solid ${storeDone?'#81c784':'#e0e0e0'}`, borderRadius:10, fontSize:12, color: storeDone?'#2e7d32':'#888', display:'flex', alignItems:'center', gap:8}}>
+        {storeDone ? '✅ Tienda completamente configurada' : '⏳ Completa cuenta bancaria, horarios y menú para esta tienda'}
+      </div>
+
+      {horarioModal && <HorarioModal onClose={()=>setHorarioModal(false)} onSave={setHorarioDone}/>}
+      {menuModal   && <MenuModal    onClose={()=>setMenuModal(false)}    onSave={setMenuDone}/>}
+    </div>
+  );
+}
+
 // ─── Post-Wizard Panel ─────────────────────────────────────────────────────
 function PostWizardPanel({ process, accounts, onClose }) {
-  const [logoUploaded, setLogoUploaded] = useState(false);
-  const [portadaUploaded, setPortadaUploaded] = useState(false);
-  const [horarioModal, setHorarioModal] = useState(false);
-  const [menuModal, setMenuModal] = useState(false);
-  const [horarioDone, setHorarioDone] = useState(false);
-  const [menuDone, setMenuDone] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(accounts.length > 0 ? 0 : null);
+  const [activeTab, setActiveTab]   = useState(0);
+  const [showNewStore, setShowNewStore] = useState(false);
+  const [stores, setStores] = useState([
+    { name: 'Frutbry — Tienda principal', isMain: true, selectedAccount: accounts.length > 0 ? 0 : null,
+      logoUploaded: false, portadaUploaded: false, horarioDone: false, menuDone: false }
+  ]);
 
-  const allDone = logoUploaded && portadaUploaded && horarioDone && menuDone && selectedAccount !== null;
+  function updateStore(idx, updated) {
+    setStores(prev => prev.map((s, i) => i === idx ? updated : s));
+  }
+
+  function addStore(form) {
+    setStores(prev => [...prev, {
+      name: form.nombre, isMain: false,
+      selectedAccount: accounts.length > 0 ? 0 : null,
+      horarioDone: false, menuDone: false,
+      logoUploaded: false, portadaUploaded: false,
+    }]);
+    setActiveTab(stores.length); // switch to new tab
+  }
+
+  const allStoresDone = stores.every(s =>
+    s.selectedAccount !== null && s.horarioDone && s.menuDone &&
+    (!s.isMain || (s.logoUploaded && s.portadaUploaded))
+  );
 
   return (
     <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
@@ -814,7 +989,7 @@ function PostWizardPanel({ process, accounts, onClose }) {
               <span className="panel-success-badge">✓ Wizard completado</span>
             </div>
             <div className="breadcrumb">
-              Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound › Configuración de tienda</span>
+              Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound › Configuración de tiendas</span>
             </div>
           </div>
           <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
@@ -827,148 +1002,76 @@ function PostWizardPanel({ process, accounts, onClose }) {
             <div>
               <div className="panel-success-title">¡Proceso completado exitosamente!</div>
               <div className="panel-success-sub">
-                El proceso Inbound para <strong>Frutbry</strong> ({process.agente}) fue procesado. Completa la configuración de la tienda para activar el aliado en la plataforma.
+                El proceso Inbound para <strong>Frutbry</strong> ({process.agente}) fue procesado. Configura cada tienda — cuenta bancaria, horarios y menú — para poder activar el aliado.
               </div>
             </div>
           </div>
 
-          {/* Store tabs (single store, no + button) */}
-          <div className="store-tabs">
-            <div className="store-tab active">🏪 Frutbry — Tienda principal</div>
+          {/* Store tabs */}
+          <div style={{display:'flex', alignItems:'center', borderBottom:'2px solid #f0f0f0', marginBottom:24, gap:0}}>
+            {stores.map((s, i) => {
+              const done = s.selectedAccount !== null && s.horarioDone && s.menuDone
+                && (!s.isMain || (s.logoUploaded && s.portadaUploaded));
+              return (
+                <div key={i}
+                  className={`store-tab ${activeTab===i?'active':''}`}
+                  onClick={()=>setActiveTab(i)}
+                  style={{display:'flex', alignItems:'center', gap:6}}
+                >
+                  {done ? '✅' : '🏪'} {s.name}
+                  {done && activeTab!==i && <span style={{fontSize:10,background:'#e8f5e9',color:'#2e7d32',padding:'1px 5px',borderRadius:8,fontWeight:700}}>OK</span>}
+                </div>
+              );
+            })}
+            {/* + Nueva tienda button */}
+            <div
+              onClick={()=>setShowNewStore(true)}
+              style={{padding:'10px 16px', fontSize:13, color:'#4361ee', cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontWeight:600, borderLeft:'1px solid #f0f0f0', marginLeft:'auto', whiteSpace:'nowrap'}}
+            >
+              + Nueva tienda
+            </div>
           </div>
 
-          {/* ── Cuenta bancaria asociada ── */}
-          <div className="marca-section" style={{marginBottom:20}}>
-            <div className="marca-section-title">
-              🏦 Cuenta bancaria asociada
-              {selectedAccount !== null && <span style={{background:'#e8f5e9', color:'#2e7d32', fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:600, marginLeft:8}}>✓ Asignada</span>}
-            </div>
-            <div style={{fontSize:12, color:'#888', marginBottom:12}}>Selecciona cuál de las cuentas registradas en el wizard se asocia a esta tienda.</div>
-            <div style={{display:'flex', flexDirection:'column', gap:10}}>
-              {accounts.length === 0 && (
-                <div style={{fontSize:13, color:'#e63946', padding:'10px 14px', background:'#fff5f5', border:'1px solid #fcc', borderRadius:8}}>
-                  ⚠ No hay cuentas bancarias registradas. Vuelve al paso 5 del wizard para agregar una.
-                </div>
-              )}
-              {accounts.map((acc, idx) => (
-                <label key={idx} style={{display:'flex', alignItems:'center', gap:14, padding:'12px 16px', border:`1.5px solid ${selectedAccount===idx?'#4361ee':'#e0e0e0'}`, borderRadius:10, cursor:'pointer', background: selectedAccount===idx?'#f0f3ff':'#fff', transition:'all 0.15s'}}>
-                  <input type="radio" name="bank_account" checked={selectedAccount===idx} onChange={()=>setSelectedAccount(idx)} style={{accentColor:'#4361ee', width:16, height:16}}/>
-                  <div style={{width:36, height:36, borderRadius:8, background:'#e8f5e9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0}}>🏦</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:13, fontWeight:600, color:'#1a1a2e'}}>{acc.nombreTitular || 'Sin nombre'}</div>
-                    <div style={{fontSize:12, color:'#555'}}>{acc.banco || '—'} · {acc.tipoCuenta || '—'} · Cta: {acc.numeroCuenta || '—'}</div>
+          {/* Active store content */}
+          <StoreTabContent
+            key={activeTab}
+            store={stores[activeTab]}
+            storeIdx={activeTab}
+            accounts={accounts}
+            updateStore={(updated) => updateStore(activeTab, updated)}
+          />
+
+          {/* Global CTA */}
+          <div style={{marginTop:24}}>
+            {allStoresDone
+              ? <div style={{background:'linear-gradient(135deg,#e8f5e9,#f1f8e9)',border:'1px solid #81c784',borderRadius:12,padding:'18px 22px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:12}}>
+                    <span style={{fontSize:28}}>🚀</span>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#1b5e20'}}>Todo listo para activar</div>
+                      <div style={{fontSize:12,color:'#388e3c'}}>{stores.length} tienda{stores.length>1?'s':''} configurada{stores.length>1?'s':''}. Puedes activar el aliado en la plataforma.</div>
+                    </div>
                   </div>
-                  {selectedAccount===idx && <span style={{fontSize:11, background:'#4361ee', color:'white', padding:'2px 8px', borderRadius:10, fontWeight:600}}>✓ Seleccionada</span>}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="marca-section">
-            <div className="marca-section-title">
-              🖼️ Identidad de marca
-              {logoUploaded && portadaUploaded && <span style={{background:'#e8f5e9', color:'#2e7d32', fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:600}}>✓ Completado</span>}
-            </div>
-            <div className="upload-grid">
-              {/* Logo */}
-              <div>
-                <div style={{fontSize:11, color:'#888', fontWeight:600, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em'}}>Logo de marca <span style={{color:'#aaa', fontWeight:400}}>(400×400px)</span></div>
-                {!logoUploaded
-                  ? <div className="upload-area" onClick={()=>setLogoUploaded(true)}>
-                      <div className="upload-icon">🖼️</div>
-                      <div className="upload-label">Subir logo</div>
-                      <div className="upload-sub">PNG, JPG — máx. 5MB</div>
-                    </div>
-                  : <div className="upload-area upload-done" style={{flexDirection:'row', justifyContent:'center', gap:12}}>
-                      <div className="upload-done-check">✓</div>
-                      <div>
-                        <div style={{fontSize:13, fontWeight:600, color:'#2e7d32'}}>logo_frutbry.png</div>
-                        <div style={{fontSize:11, color:'#66bb6a'}}>400×400px — Cargado</div>
-                      </div>
-                    </div>
-                }
-              </div>
-              {/* Portada */}
-              <div>
-                <div style={{fontSize:11, color:'#888', fontWeight:600, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em'}}>Imagen de portada <span style={{color:'#aaa', fontWeight:400}}>(1200×400px)</span></div>
-                {!portadaUploaded
-                  ? <div className="upload-area" onClick={()=>setPortadaUploaded(true)}>
-                      <div className="upload-icon">🏞️</div>
-                      <div className="upload-label">Subir portada</div>
-                      <div className="upload-sub">PNG, JPG — máx. 10MB</div>
-                    </div>
-                  : <div className="upload-area upload-done" style={{flexDirection:'row', justifyContent:'center', gap:12}}>
-                      <div className="upload-done-check">✓</div>
-                      <div>
-                        <div style={{fontSize:13, fontWeight:600, color:'#2e7d32'}}>portada_frutbry.jpg</div>
-                        <div style={{fontSize:11, color:'#66bb6a'}}>1200×400px — Cargada</div>
-                      </div>
-                    </div>
-                }
-              </div>
-            </div>
-          </div>
-
-          {/* ── Config cards: Horario & Menu ── */}
-          <div className="config-section-title">Configuración de tienda</div>
-          <div className="config-cards-row" style={{gridTemplateColumns:'1fr 1fr'}}>
-            {/* Horarios */}
-            <div className={`config-card ${horarioDone?'completed':''}`} onClick={()=>setHorarioModal(true)}>
-              <div className="config-card-left">
-                <div className="config-card-icon blue">🕐</div>
-                <div>
-                  <div className="config-card-name">Horarios de atención</div>
-                  <div className={`config-card-status ${horarioDone?'done':'pending'}`}>
-                    {horarioDone ? '✓ Completado' : '● Pendiente'}
-                  </div>
+                  <button className="btn-finish" onClick={onClose}>Activar aliado →</button>
                 </div>
-              </div>
-              <div className="config-card-arrow">{horarioDone?'✓':'›'}</div>
-            </div>
-            {/* Menú */}
-            <div className={`config-card ${menuDone?'completed':''}`} onClick={()=>setMenuModal(true)}>
-              <div className="config-card-left">
-                <div className="config-card-icon orange">🍽️</div>
-                <div>
-                  <div className="config-card-name">Menú y catálogo</div>
-                  <div className={`config-card-status ${menuDone?'done':'pending'}`}>
-                    {menuDone ? '✓ Completado' : '● Pendiente'}
-                  </div>
+              : <div style={{background:'#f8f9fc',border:'1px solid #e0e0e0',borderRadius:12,padding:'14px 18px',fontSize:12,color:'#888',display:'flex',alignItems:'center',gap:8}}>
+                  <span>⏳</span> {stores.filter(s=>s.selectedAccount!==null&&s.horarioDone&&s.menuDone).length} de {stores.length} tienda{stores.length>1?'s':''} completa{stores.length>1?'s':''}. Termina de configurar todas para activar el aliado.
                 </div>
-              </div>
-              <div className="config-card-arrow">{menuDone?'✓':'›'}</div>
-            </div>
+            }
           </div>
-
-          {/* Final CTA */}
-          {allDone && (
-            <div style={{background:'linear-gradient(135deg, #e8f5e9, #f1f8e9)', border:'1px solid #81c784', borderRadius:12, padding:'18px 22px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-              <div style={{display:'flex', alignItems:'center', gap:12}}>
-                <span style={{fontSize:28}}>🚀</span>
-                <div>
-                  <div style={{fontSize:14, fontWeight:700, color:'#1b5e20'}}>Todo listo para activar</div>
-                  <div style={{fontSize:12, color:'#388e3c'}}>Frutbry completó todos los requisitos. Puedes activar el aliado en la plataforma.</div>
-                </div>
-              </div>
-              <button className="btn-finish" onClick={onClose}>Activar aliado →</button>
-            </div>
-          )}
-          {!allDone && (
-            <div style={{background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:12, padding:'14px 18px', fontSize:12, color:'#888', display:'flex', alignItems:'center', gap:8}}>
-              <span>⏳</span> Completa todos los pasos anteriores para poder activar el aliado en la plataforma.
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Sub-modals */}
-      {horarioModal && <HorarioModal onClose={()=>setHorarioModal(false)} onSave={()=>setHorarioDone(true)}/>}
-      {menuModal && <MenuModal onClose={()=>setMenuModal(false)} onSave={()=>setMenuDone(true)}/>}
+      {showNewStore && <NuevaTiendaModal onClose={()=>setShowNewStore(false)} onSave={addStore}/>}
     </div>
   );
 }
 
 // ─── Wizard Modal ──────────────────────────────────────────────────────────
 function InboundWizard({ process, onClose }) {
+  const [gateEmail, setGateEmail]   = useState(process.agente || '');
+  const [gateDone, setGateDone]     = useState(false);
+  const [gateError, setGateError]   = useState(false);
   const [currentStep, setCurrentStep] = useState(process.progress || 1);
   const [data, setData] = useState({...inheritedData});
   const [accounts, setAccounts] = useState([{
@@ -984,7 +1087,17 @@ function InboundWizard({ process, onClose }) {
   const [finished, setFinished] = useState(false);
 
   if (finished) {
-    return <PostWizardPanel process={process} accounts={accounts} onClose={onClose}/>;
+    return <PostWizardPanel process={{...process, agente: gateEmail}} accounts={accounts} onClose={onClose}/>;
+  }
+
+  function handleGateContinue() {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!gateEmail.trim() || !emailRegex.test(gateEmail)) {
+      setGateError(true);
+      return;
+    }
+    setGateError(false);
+    setGateDone(true);
   }
 
   function renderStep() {
@@ -1000,6 +1113,95 @@ function InboundWizard({ process, onClose }) {
     }
   }
 
+  // ── GATE: email screen before wizard ──────────────────────────────────────
+  if (!gateDone) return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-panel">
+        <div className="wizard-topbar">
+          <div>
+            <div className="wizard-title">
+              Proceso Inbound
+              <span className="inbound-badge-title">🔓 Inbound</span>
+            </div>
+            <div className="breadcrumb">
+              Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound</span>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+        </div>
+
+        {/* Gate content — centered */}
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'70vh', padding:'40px 28px'}}>
+          <div style={{maxWidth:520, width:'100%'}}>
+
+            {/* Icon */}
+            <div style={{textAlign:'center', marginBottom:24}}>
+              <div style={{width:72, height:72, borderRadius:'50%', background:'linear-gradient(135deg,#fff3e0,#ffe0b2)', border:'2px solid #ffb74d', display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:36}}>⚡</div>
+            </div>
+
+            <div style={{fontSize:22, fontWeight:700, color:'#1a1a2e', textAlign:'center', marginBottom:8}}>
+              Iniciar Proceso Inbound
+            </div>
+            <div style={{fontSize:13, color:'#888', textAlign:'center', marginBottom:32, lineHeight:1.6}}>
+              Este proceso retomará la negociación incompleta de <strong style={{color:'#333'}}>{process.brand || 'Frutbry'}</strong>.<br/>
+              Ingresa el correo del agente responsable para continuar.
+            </div>
+
+            {/* Info card */}
+            <div style={{background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:12, padding:'14px 18px', marginBottom:28, display:'flex', gap:14}}>
+              <div style={{fontSize:22, flexShrink:0}}>📋</div>
+              <div>
+                <div style={{fontSize:12, fontWeight:700, color:'#555', marginBottom:4}}>Información del proceso</div>
+                <div style={{fontSize:12, color:'#888', lineHeight:1.6}}>
+                  Progreso guardado hasta el <strong style={{color:'#333'}}>paso {process.progress} de 7</strong><br/>
+                  Los datos ingresados por el aliado serán pre-cargados automáticamente.<br/>
+                  El agente quedará registrado como responsable de esta gestión.
+                </div>
+              </div>
+            </div>
+
+            {/* Email input */}
+            <div style={{marginBottom:20}}>
+              <label style={{fontSize:13, fontWeight:600, color:'#333', display:'block', marginBottom:8}}>
+                ✉️ Correo del agente responsable <span style={{color:'#e63946'}}>*</span>
+              </label>
+              <input
+                className="form-input"
+                style={{width:'100%', fontSize:14, padding:'12px 16px', border:`1.5px solid ${gateError?'#e63946':'#e0e0e0'}`, borderRadius:10}}
+                type="email"
+                placeholder="agente@rappi.com"
+                value={gateEmail}
+                onChange={e=>{ setGateEmail(e.target.value); setGateError(false); }}
+                onKeyDown={e=>{ if(e.key==='Enter') handleGateContinue(); }}
+                autoFocus
+              />
+              {gateError && (
+                <div style={{marginTop:6, fontSize:12, color:'#e63946', display:'flex', alignItems:'center', gap:5}}>
+                  ⚠ Ingresa un correo electrónico válido para continuar.
+                </div>
+              )}
+              <div style={{marginTop:6, fontSize:11, color:'#aaa'}}>
+                Este correo quedará auditado como responsable del proceso Inbound.
+              </div>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={handleGateContinue}
+              style={{width:'100%', background:'#e65100', color:'white', border:'none', borderRadius:10, padding:'13px', fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:10}}>
+              ⚡ Continuar con el proceso →
+            </button>
+
+            <button onClick={onClose} style={{width:'100%', background:'none', border:'none', color:'#aaa', fontSize:13, cursor:'pointer', marginTop:14, textAlign:'center'}}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── WIZARD ────────────────────────────────────────────────────────────────
   return (
     <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="modal-panel">
@@ -1014,7 +1216,12 @@ function InboundWizard({ process, onClose }) {
               Procesos Comerciales › Buscador › <span>Nueva negociación — Inbound</span>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+          <div style={{display:'flex', alignItems:'center', gap:12}}>
+            <div style={{fontSize:12, color:'#888', background:'#f5f6fa', padding:'5px 12px', borderRadius:20, border:'1px solid #e0e0e0'}}>
+              ✉️ {gateEmail}
+            </div>
+            <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+          </div>
         </div>
 
         {/* Banner */}
@@ -1023,7 +1230,7 @@ function InboundWizard({ process, onClose }) {
           <div>
             <div className="inbound-banner-title">Proceso Inbound — Información pre-cargada</div>
             <div className="inbound-banner-text">
-              Este proceso retoma la información ingresada previamente por el aliado <strong>mr.kevin27070@gmail.com</strong>. Los campos en verde fueron heredados automáticamente y son editables. Avanza por cada paso para revisar y ajustar lo que sea necesario antes de completar el proceso.
+              Este proceso retoma la información ingresada previamente por el aliado <strong>{process.agente || 'mr.kevin27070@gmail.com'}</strong>. Los campos en verde fueron heredados automáticamente y son editables. Agente responsable: <strong>{gateEmail}</strong>.
             </div>
           </div>
         </div>
@@ -1074,82 +1281,292 @@ function InboundWizard({ process, onClose }) {
   );
 }
 
+// ─── Buscador / Pre-wizard flow ────────────────────────────────────────────
+const mockRazonSocial = {
+  nit: '1020825274',
+  nombre: 'ALFONSO JOSE ARENAS ILLERA',
+  email: 'alfonsoarenas1997@gmail.com',
+  brands: [
+    { id: 1, nombre: 'Alfon Burguers', tiendas: 2 },
+    { id: 2, nombre: 'Frutbry', tiendas: 1 },
+  ]
+};
+
+const agentEmails = [
+  'mr.kevin27070@gmail.com',
+  'carlos.torres@rappi.com',
+  'maria.lopez@rappi.com',
+  'juan.garcia@rappi.com',
+];
+
+function BuscadorModal({ onClose, onStartInbound }) {
+  const [nitInput, setNitInput]       = useState('1020825274');
+  const [searched, setSearched]       = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  const [selectedEmail, setSelectedEmail] = useState('');
+  const [emailError, setEmailError]   = useState(false);
+  const [step, setStep]               = useState('search'); // search | brand | email | confirm
+
+  function doSearch() {
+    if (nitInput.trim()) setSearched(true);
+  }
+
+  function handleBrandSelect(brand) {
+    setSelectedBrand(brand);
+    setStep('brand');
+  }
+
+  function handleContinueToEmail() {
+    setStep('email');
+  }
+
+  function handleStartInbound() {
+    if (!selectedEmail) { setEmailError(true); return; }
+    setEmailError(false);
+    onClose();
+    onStartInbound({ agente: selectedEmail, brand: selectedBrand });
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-panel" style={{background:'#f5f6fa'}}>
+
+        {/* Header */}
+        <div className="wizard-topbar">
+          <div>
+            <div className="wizard-title">Iniciar Proceso Inbound</div>
+            <div className="breadcrumb">
+              Procesos Comerciales › <span>Buscador</span>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>✕ Cerrar</button>
+        </div>
+
+        <div style={{padding:'28px 32px', maxWidth:860}}>
+
+          {/* ── STEP 1: Buscar razón social ── */}
+          <div style={{background:'#fff', borderRadius:14, padding:24, marginBottom:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+            <div style={{fontSize:15, fontWeight:700, color:'#1a1a2e', marginBottom:6}}>Buscar razón social</div>
+            <div style={{fontSize:13, color:'#888', marginBottom:18}}>Ingrese el tipo y número de documento de la razón social para ver los procesos comerciales disponibles.</div>
+            <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
+              <div style={{flex:'0 0 220px'}}>
+                <div style={{fontSize:11, color:'#888', marginBottom:5, fontWeight:500}}>Tipo de Documento</div>
+                <select className="form-select" style={{width:'100%'}}>
+                  <option>NIT</option><option>CC</option><option>CE</option>
+                </select>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11, color:'#888', marginBottom:5, fontWeight:500}}>NIT</div>
+                <input className="form-input" value={nitInput} onChange={e=>setNitInput(e.target.value)} placeholder="Ej: 1020825274" style={{width:'100%'}}/>
+              </div>
+              <button className="btn-next" style={{padding:'10px 28px', flexShrink:0}} onClick={doSearch}>Buscar</button>
+            </div>
+
+            {/* Razón social result */}
+            {searched && (
+              <div style={{marginTop:16, background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:12}}>
+                <div style={{width:36, height:36, borderRadius:50, background:'#e8eaed', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0}}>👤</div>
+                <div>
+                  <div style={{fontSize:11, color:'#888', fontWeight:500}}>Razón social</div>
+                  <div style={{fontSize:13, color:'#333'}}>
+                    <strong>{mockRazonSocial.nombre}</strong> | NIT {mockRazonSocial.nit} | {mockRazonSocial.nombre} | {mockRazonSocial.email}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── STEP 2: Selección de Brand ── */}
+          {searched && (
+            <div style={{background:'#fff', borderRadius:14, padding:24, marginBottom:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+              <div style={{fontSize:15, fontWeight:700, color:'#1a1a2e', marginBottom:6}}>Selección de Brand</div>
+              <div style={{fontSize:13, color:'#888', marginBottom:18}}>Selecciona el brand específico para el cual deseas iniciar el proceso Inbound.</div>
+              <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                <div
+                  onClick={()=>{ setSelectedBrand(null); setStep('search'); }}
+                  style={{padding:'10px 20px', border:`1.5px solid ${!selectedBrand?'#4361ee':'#e0e0e0'}`, borderRadius:8, cursor:'pointer', background:!selectedBrand?'#f0f3ff':'#fff', fontSize:13, color:!selectedBrand?'#4361ee':'#555', fontWeight:!selectedBrand?600:400}}
+                >
+                  Sin seleccionar brand
+                </div>
+                {mockRazonSocial.brands.map(b=>(
+                  <div key={b.id}
+                    onClick={()=>handleBrandSelect(b)}
+                    style={{padding:'10px 20px', border:`1.5px solid ${selectedBrand?.id===b.id?'#4361ee':'#e0e0e0'}`, borderRadius:8, cursor:'pointer', background:selectedBrand?.id===b.id?'#f0f3ff':'#fff', fontSize:13, color:'#333', fontWeight:selectedBrand?.id===b.id?600:400, display:'flex', alignItems:'center', gap:8}}
+                  >
+                    {b.nombre}
+                    <span style={{fontSize:11, color:'#888', display:'flex', alignItems:'center', gap:3}}>🏪 Tiendas {b.tiendas}</span>
+                    {selectedBrand?.id===b.id && <span style={{color:'#4361ee'}}>✓</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 3: Card Inbound + Email ── */}
+          {searched && selectedBrand && (
+            <div style={{background:'#fff', borderRadius:14, padding:24, marginBottom:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+              <div style={{fontSize:15, fontWeight:700, color:'#1a1a2e', marginBottom:6}}>Proceso disponible</div>
+              <div style={{fontSize:13, color:'#888', marginBottom:18}}>
+                Para <strong>{selectedBrand.nombre}</strong> existe un proceso incompleto que puede retomarse como Inbound.
+              </div>
+
+              {/* Inbound card */}
+              <div style={{border:'2px solid #ffb74d', borderRadius:14, padding:20, background:'linear-gradient(135deg,#fff8e1,#fff3cd)', marginBottom:20}}>
+                <div style={{display:'flex', alignItems:'flex-start', gap:16}}>
+                  <div style={{width:52, height:52, borderRadius:12, background:'#ff9800', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0}}>⚡</div>
+                  <div style={{flex:1}}>
+                    <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
+                      <div style={{fontSize:16, fontWeight:700, color:'#e65100'}}>Proceso Inbound</div>
+                      <span className="badge badge-inbound-unlocked">🔓 Disponible</span>
+                    </div>
+                    <div style={{fontSize:13, color:'#7c4a00', marginBottom:10}}>
+                      Retoma el proceso de <strong>Nueva Negociación</strong> que el aliado dejó incompleto. Toda la información ingresada hasta el <strong>paso 3</strong> será pre-cargada automáticamente.
+                    </div>
+                    <div style={{display:'flex', gap:16, fontSize:12, color:'#8a5c00'}}>
+                      <span>⏱ Duración estimada: 15 min</span>
+                      <span>📋 Progreso guardado: paso 3 / 7</span>
+                      <span>📅 Disponible desde: 28 - Marzo - 2026</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email selector */}
+              <div style={{background:'#f8f9fc', border:`1.5px solid ${emailError?'#e63946':'#e0e0e0'}`, borderRadius:10, padding:16}}>
+                <div style={{fontSize:13, fontWeight:700, color:'#1a1a2e', marginBottom:4, display:'flex', alignItems:'center', gap:8}}>
+                  ✉️ Selecciona el email del agente responsable
+                  <span style={{fontSize:11, color:'#888', fontWeight:400}}>— Obligatorio para iniciar el proceso</span>
+                </div>
+                <div style={{fontSize:12, color:'#888', marginBottom:12}}>
+                  El agente seleccionado será registrado como responsable del proceso Inbound y podrá ser auditado posteriormente.
+                </div>
+                <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                  {agentEmails.map(email=>(
+                    <label key={email} style={{display:'flex', alignItems:'center', gap:10, padding:'10px 14px', border:`1.5px solid ${selectedEmail===email?'#4361ee':'#e8eaed'}`, borderRadius:8, cursor:'pointer', background:selectedEmail===email?'#f0f3ff':'#fff', transition:'all 0.15s'}}>
+                      <input type="radio" name="agent_email" checked={selectedEmail===email} onChange={()=>{ setSelectedEmail(email); setEmailError(false); }} style={{accentColor:'#4361ee', width:15, height:15}}/>
+                      <div style={{width:28, height:28, borderRadius:'50%', background:'#e8eaed', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0}}>👤</div>
+                      <span style={{fontSize:13, color:'#222', fontWeight: selectedEmail===email?600:400}}>{email}</span>
+                      {selectedEmail===email && <span style={{marginLeft:'auto', fontSize:11, background:'#4361ee', color:'white', padding:'2px 8px', borderRadius:10, fontWeight:600}}>✓ Seleccionado</span>}
+                    </label>
+                  ))}
+                </div>
+                {emailError && (
+                  <div style={{marginTop:10, fontSize:12, color:'#e63946', display:'flex', alignItems:'center', gap:6}}>
+                    ⚠ Debes seleccionar un email para poder iniciar el proceso Inbound.
+                  </div>
+                )}
+              </div>
+
+              {/* CTA */}
+              <div style={{display:'flex', justifyContent:'flex-end', marginTop:18}}>
+                <button className="btn-next" style={{padding:'11px 32px', fontSize:14, background:'#e65100', display:'flex', alignItems:'center', gap:8}} onClick={handleStartInbound}>
+                  ⚡ Iniciar Proceso Inbound →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* No brand selected hint */}
+          {searched && !selectedBrand && (
+            <div style={{background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:12, padding:'14px 18px', fontSize:13, color:'#888', display:'flex', alignItems:'center', gap:8}}>
+              👆 Selecciona un brand para ver los procesos disponibles.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ──────────────────────────────────────────────────────────────
 function App() {
-  const [openWizard, setOpenWizard] = useState(null);
+  const [view, setView]                 = useState('list');   // 'list' | 'buscador'
+  const [openWizard, setOpenWizard]     = useState(null);
+  const [nitInput, setNitInput]         = useState('1020825274');
+  const [searched, setSearched]         = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState(null);
 
   function handleRevisar(proc) {
     if (proc.estado === 'inbound') {
       setOpenWizard(proc);
     } else if (proc.estado === 'inbound_locked') {
-      alert(`⏳ Este proceso Inbound se desbloqueará el ${proc.unlocksAt}.\n\nEl proceso queda bloqueado durante 30 días desde la fecha de creación para permitir que el aliado intente completarlo por su cuenta antes de la intervención comercial.`);
+      alert(`⏳ Este proceso Inbound se desbloqueará el ${proc.unlocksAt}.\n\nEl proceso queda bloqueado durante 30 días para dar tiempo al aliado de completarlo por su cuenta.`);
     } else {
       alert('Abriendo proceso estándar...');
     }
   }
 
-  return (
-    <div>
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-logo">
-          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18"/><rect x="12" y="10" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="18" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="26" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/></svg>
-        </div>
-        <div className="sidebar-user">
-          <div className="sidebar-avatar">👤</div>
-          <div className="sidebar-name">alfonso.arenas</div>
-        </div>
-        <div className="sidebar-nav">
-          {[
-            {icon:'👥', label:'Usuarios'},
-            {icon:'✅', label:'Aprobaciones'},
-            {icon:'🏷️', label:'Brand Development'},
-            {icon:'📋', label:'Procesos Comerciales', active:true},
-            {icon:'📊', label:'Indicadores'},
-            {icon:'🔧', label:'Herramientas de soporte'},
-            {icon:'📢', label:'Campañas'},
-            {icon:'💳', label:'Pagos'},
-            {icon:'🕐', label:'Horarios'},
-            {icon:'📣', label:'Marketing Restaurantes'},
-            {icon:'🚪', label:'Cerrar sesión'},
-          ].map((item,i)=>(
-            <div key={i} className={`nav-item ${item.active?'active':''}`}>
-              <span>{item.icon}</span> {item.label}
-            </div>
-          ))}
-        </div>
-        <div className="sidebar-version">
-          <div style={{display:'flex', gap:6}}>
-            <span className="flag">🇪🇸</span>
-            <span className="flag">🇧🇷</span>
-          </div>
-          <span>v2.39.04</span>
-        </div>
-      </div>
+  function doSearch() {
+    if (nitInput.trim()) { setSearched(true); setSelectedBrand(null); }
+  }
 
-      {/* Main content */}
+  // ── Process cards for the buscador grid ───────────────────────────────────
+  const processCards = [
+    { icon:'🍽️', title:'Nueva negociación', desc:'Gestiona la creación de una nueva unidad de negocio: razón social, marca, punto de venta y contratos asociados', duration:'30 minutos', docs:'~6', enabled: false },
+    { icon:'💳', title:'Cambio de cuenta bancaria', desc:'Actualiza la información de la cuenta bancaria donde el aliado recibirá los pagos de sus ventas', duration:'20 minutos', docs:'~1', enabled: true },
+    { icon:'🔄', title:'Expansión de marca', desc:'Gestiona la expansión de una marca existente a una nueva sucursal', duration:'20 minutos', docs:'~1', enabled: true },
+    { icon:'⚡', title:'Proceso Inbound', desc:'Retoma un proceso de nueva negociación que el aliado dejó incompleto. Los datos ya ingresados se heredan automáticamente.', duration:'15 minutos', docs:'Heredado', enabled: true, isInbound: true },
+    { icon:'🚀', title:'Expansión de marca turbo', desc:'Gestiona la expansión turbo de una marca existente con selección de tienda y modificación de contrato', duration:'20 minutos', docs:'~0', enabled: false },
+    { icon:'✏️', title:'Cambio de nombre de brand', desc:'Actualiza el nombre del brand registrado en Rappi', duration:'20 minutos', docs:'~0', enabled: true },
+    { icon:'🏢', title:'Expansión de negocio', desc:'Creación de franquicias para marcas ya existentes', duration:'20 minutos', docs:'~6', enabled: false },
+  ];
+
+  const sidebar = (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18"/><rect x="12" y="10" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="18" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/><rect x="12" y="26" width="16" height="4" rx="2" fill="none" stroke="white" strokeWidth="2.5"/></svg>
+      </div>
+      <div className="sidebar-user">
+        <div className="sidebar-avatar">👤</div>
+        <div className="sidebar-name">alfonso.arenas</div>
+      </div>
+      <div className="sidebar-nav">
+        {[
+          {icon:'👥', label:'Usuarios'},
+          {icon:'✅', label:'Aprobaciones'},
+          {icon:'🏷️', label:'Brand Development'},
+          {icon:'📋', label:'Procesos Comerciales', active:true},
+          {icon:'📊', label:'Indicadores'},
+          {icon:'🔧', label:'Herramientas de soporte'},
+          {icon:'📢', label:'Campañas'},
+          {icon:'💳', label:'Pagos'},
+          {icon:'🕐', label:'Horarios'},
+          {icon:'📣', label:'Marketing Restaurantes'},
+          {icon:'🚪', label:'Cerrar sesión'},
+        ].map((item,i)=>(
+          <div key={i} className={`nav-item ${item.active?'active':''}`}>
+            <span>{item.icon}</span> {item.label}
+          </div>
+        ))}
+      </div>
+      <div className="sidebar-version">
+        <div style={{display:'flex', gap:6}}><span className="flag">🇪🇸</span><span className="flag">🇧🇷</span></div>
+        <span>v2.39.04</span>
+      </div>
+    </div>
+  );
+
+  // ══════════════════════════════════════════════════════════════════
+  // VIEW: LIST (tabla de procesos)
+  // ══════════════════════════════════════════════════════════════════
+  if (view === 'list') return (
+    <div>
+      {sidebar}
       <div className="main">
         <div className="topbar">
-          <div className="page-title">
-            Procesos Comerciales
-            <span className="version-badge">v1.17.3</span>
-          </div>
-          <button className="btn-primary">+ Comenzar Proceso</button>
+          <div className="page-title">Procesos Comerciales <span className="version-badge">v1.17.3</span></div>
+          <button className="btn-primary" onClick={()=>setView('buscador')}>+ Comenzar Proceso</button>
         </div>
-
         <div className="table-section">
           <div className="table-filters">
             <button className="filter-btn">⚙️ Filtrar</button>
             <input className="search-input" placeholder="Email Agente" type="text"/>
           </div>
-
-          {/* Inbound legend */}
           <div style={{padding:'10px 20px', background:'#fffde7', borderBottom:'1px solid #fff9c4', fontSize:12, color:'#7c4a00', display:'flex', gap:16, alignItems:'center'}}>
             <strong>💡 Proceso Inbound:</strong>
             <span><span className="badge badge-inbound-unlocked" style={{marginRight:4}}>Inbound</span> = Disponible para revisar (pasaron +30 días)</span>
             <span><span className="badge badge-inbound" style={{marginRight:4}}>Inbound</span> = Bloqueado (aún en plazo del aliado)</span>
           </div>
-
           <table>
             <thead>
               <tr>
@@ -1169,36 +1586,21 @@ function App() {
                   <td>
                     {proc.proceso}
                     {(proc.estado==='inbound'||proc.estado==='inbound_locked') && (
-                      <div style={{fontSize:11, color:'#888', marginTop:2}}>
-                        Progreso guardado hasta paso {proc.progress}
-                      </div>
+                      <div style={{fontSize:11,color:'#888',marginTop:2}}>Progreso guardado hasta paso {proc.progress}</div>
                     )}
                   </td>
                   <td>{proc.agente}</td>
                   <td>
                     <Badge estado={proc.estado}/>
-                    {proc.estado==='inbound_locked' && (
-                      <div className="countdown">🔒 Se desbloquea: {proc.unlocksAt}</div>
-                    )}
-                    {proc.estado==='inbound' && (
-                      <div className="countdown" style={{color:'#2e7d32'}}>✔ Disponible desde {proc.unlocksAt}</div>
-                    )}
+                    {proc.estado==='inbound_locked' && <div className="countdown">🔒 Se desbloquea: {proc.unlocksAt}</div>}
+                    {proc.estado==='inbound' && <div className="countdown" style={{color:'#2e7d32'}}>✔ Disponible desde {proc.unlocksAt}</div>}
                   </td>
                   <td>{proc.fecha}</td>
                   <td>{proc.updated}</td>
                   <td>
                     {proc.estado==='inbound_locked'
-                      ? (
-                        <div className="tooltip-wrap">
-                          <button className="action-link disabled">Revisar</button>
-                          <div className="tooltip-box">Bloqueado hasta {proc.unlocksAt}</div>
-                        </div>
-                      )
-                      : (
-                        <button className="action-link" onClick={()=>handleRevisar(proc)}>
-                          Revisar
-                        </button>
-                      )
+                      ? <div className="tooltip-wrap"><button className="action-link disabled">Revisar</button><div className="tooltip-box">Bloqueado hasta {proc.unlocksAt}</div></div>
+                      : <button className="action-link" onClick={()=>handleRevisar(proc)}>Revisar</button>
                     }
                   </td>
                 </tr>
@@ -1207,11 +1609,146 @@ function App() {
           </table>
         </div>
       </div>
+      {openWizard && <InboundWizard process={openWizard} onClose={()=>setOpenWizard(null)}/>}
+    </div>
+  );
 
-      {/* Wizard Modal */}
-      {openWizard && (
-        <InboundWizard process={openWizard} onClose={()=>setOpenWizard(null)}/>
-      )}
+  // ══════════════════════════════════════════════════════════════════
+  // VIEW: BUSCADOR (igual a la imagen — buscar NIT → brand → cards)
+  // ══════════════════════════════════════════════════════════════════
+  return (
+    <div>
+      {sidebar}
+      <div className="main">
+        <div className="topbar">
+          <div>
+            <div className="page-title">Procesos Comerciales <span className="version-badge">v1.17.3</span></div>
+            <div style={{fontSize:12, color:'#888', marginTop:2}}>
+              <span style={{cursor:'pointer', color:'#4361ee'}} onClick={()=>setView('list')}>Procesos Comerciales</span> › <strong>Buscador</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style={{padding:'24px 28px'}}>
+
+          {/* ── Buscar razón social ── */}
+          <div style={{background:'#fff', borderRadius:12, padding:24, marginBottom:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+            <div style={{fontSize:15, fontWeight:700, marginBottom:4}}>Buscar razón social</div>
+            <div style={{fontSize:13, color:'#888', marginBottom:18}}>Ingrese el tipo y número de documento de la razón social para ver los procesos comerciales disponibles.</div>
+            <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
+              <div style={{flex:'0 0 200px'}}>
+                <div style={{fontSize:11,color:'#888',marginBottom:5,fontWeight:500}}>Tipo de Documento</div>
+                <select className="form-select" style={{width:'100%', background:'#f5f6fa'}}><option>NIT</option><option>CC</option><option>CE</option></select>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,color:'#888',marginBottom:5,fontWeight:500}}>NIT</div>
+                <input className="form-input" style={{width:'100%', background:'#f5f6fa'}} value={nitInput} onChange={e=>setNitInput(e.target.value)} placeholder="Ej: 1020825274"/>
+              </div>
+              <button className="btn-next" style={{padding:'10px 28px'}} onClick={doSearch}>Buscar</button>
+            </div>
+
+            {searched && (
+              <div style={{marginTop:14, background:'#f8f9fc', border:'1px solid #e0e0e0', borderRadius:10, padding:'10px 16px', display:'flex', alignItems:'center', gap:10}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:'#e0e0e0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>👤</div>
+                <div>
+                  <div style={{fontSize:11,color:'#888',fontWeight:500}}>Razón social</div>
+                  <div style={{fontSize:13,color:'#333'}}><strong>{mockRazonSocial.nombre}</strong> | NIT {mockRazonSocial.nit} | {mockRazonSocial.nombre} | {mockRazonSocial.email}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Selección de Brand ── */}
+          {searched && (
+            <div style={{background:'#fff', borderRadius:12, padding:24, marginBottom:20, boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+              <div style={{fontSize:15, fontWeight:700, marginBottom:4}}>Selección de Brand</div>
+              <div style={{fontSize:13, color:'#888', marginBottom:16}}>Selecciona la brand específica para el cual deseas iniciar el proceso comercial, o continúa sin seleccionar brand.</div>
+              <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                <div onClick={()=>setSelectedBrand(null)}
+                  style={{padding:'9px 18px', border:`1.5px solid ${!selectedBrand?'#4361ee':'#e0e0e0'}`, borderRadius:8, cursor:'pointer', background:!selectedBrand?'#f0f3ff':'#fff', fontSize:13, color:!selectedBrand?'#4361ee':'#555', fontWeight:!selectedBrand?600:400}}>
+                  Sin seleccionar brand
+                </div>
+                {mockRazonSocial.brands.map(b=>(
+                  <div key={b.id} onClick={()=>setSelectedBrand(b)}
+                    style={{padding:'9px 18px', border:`1.5px solid ${selectedBrand?.id===b.id?'#4361ee':'#e0e0e0'}`, borderRadius:8, cursor:'pointer', background:selectedBrand?.id===b.id?'#f0f3ff':'#fff', fontSize:13, color:'#333', fontWeight:selectedBrand?.id===b.id?600:400, display:'flex', alignItems:'center', gap:8}}>
+                    {b.nombre}
+                    <span style={{fontSize:11,color:'#888',display:'flex',alignItems:'center',gap:3}}>🏪 Tiendas {b.tiendas}</span>
+                    {selectedBrand?.id===b.id && <span style={{color:'#4361ee',fontSize:12}}>✓</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Grid de procesos (igual a la imagen) ── */}
+          {searched && (
+            <>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16}}>
+                {processCards.map((card, i) => {
+                  const isInbound = card.isInbound;
+                  return (
+                    <div key={i} style={{
+                      background: isInbound ? 'linear-gradient(135deg,#fff8e1,#fff3cd)' : '#fff',
+                      border: isInbound ? '2px solid #ffb74d' : '1px solid #e8eaed',
+                      borderRadius:12, padding:'20px', display:'flex', flexDirection:'column', gap:10,
+                      boxShadow: isInbound ? '0 2px 12px rgba(255,152,0,0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
+                      position:'relative', overflow:'hidden',
+                    }}>
+                      {isInbound && (
+                        <div style={{position:'absolute', top:10, right:10}}>
+                          <span className="badge badge-inbound-unlocked" style={{fontSize:10}}>🔓 Inbound</span>
+                        </div>
+                      )}
+                      <div style={{display:'flex', alignItems:'center', gap:12}}>
+                        <div style={{width:42,height:42,borderRadius:10,background:isInbound?'rgba(255,152,0,0.15)':'#f0f3ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>
+                          {card.icon}
+                        </div>
+                        <div style={{fontSize:14,fontWeight:700,color: isInbound?'#e65100':'#1a1a2e',lineHeight:1.3,paddingRight:isInbound?60:0}}>
+                          {card.title}
+                        </div>
+                      </div>
+                      <div style={{fontSize:12,color: isInbound?'#7c4a00':'#666',lineHeight:1.5,flex:1}}>
+                        {card.desc}
+                      </div>
+                      <div style={{display:'flex', gap:14, fontSize:11, color:'#999'}}>
+                        <span>⏱ Duración: {card.duration}</span>
+                        <span>📋 Documentos: {card.docs}</span>
+                      </div>
+                      {isInbound && selectedBrand ? (
+                        <button
+                          onClick={()=>{ setView('list'); setOpenWizard({ id:99, estado:'inbound', agente:'', brand: selectedBrand.nombre, progress:3 }); }}
+                          style={{width:'100%', background:'#e65100', color:'white', border:'none', borderRadius:8, padding:'10px', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+                          ⚡ Iniciar Proceso Inbound
+                        </button>
+                      ) : isInbound && !selectedBrand ? (
+                        <button disabled style={{width:'100%', background:'#ffe0b2', color:'#bf360c', border:'none', borderRadius:8, padding:'10px', fontSize:13, fontWeight:500, cursor:'not-allowed'}}>
+                          Selecciona un brand primero
+                        </button>
+                      ) : card.enabled ? (
+                        <button style={{width:'100%', background:'#4361ee', color:'white', border:'none', borderRadius:8, padding:'10px', fontSize:13, fontWeight:600, cursor:'pointer'}}>
+                          Iniciar Proceso
+                        </button>
+                      ) : (
+                        <button disabled style={{width:'100%', background:'#f5f6fa', color:'#bbb', border:'1px solid #e0e0e0', borderRadius:8, padding:'10px', fontSize:13, cursor:'not-allowed'}}>
+                          Iniciar Proceso
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {!searched && (
+            <div style={{background:'#fff', borderRadius:12, padding:'32px', textAlign:'center', color:'#bbb', fontSize:14, boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
+              🔍 Ingresa el NIT y haz click en "Buscar" para ver los procesos disponibles
+            </div>
+          )}
+        </div>
+      </div>
+
+      {openWizard && <InboundWizard process={openWizard} onClose={()=>setOpenWizard(null)}/>}
     </div>
   );
 }
